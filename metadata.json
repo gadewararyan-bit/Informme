@@ -1,0 +1,6 @@
+{
+  "name": "InformMe",
+  "description": "A multilingual local information social network for India, featuring news, weather, events, and real-time messaging.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["social_networking", "location_services", "multilingual_support"]
+}

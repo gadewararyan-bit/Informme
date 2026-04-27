@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Public and private user profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "language": { "type": "string", "enum": ["en", "hi", "te", "bn", "mr", "ta", "gu", "kn", "ml", "pa"] },
+        "bio": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "areaName": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName"]
+    },
+    "Post": {
+      "title": "Community Post",
+      "description": "Feed post with local information, news, events, or alerts",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["general", "news", "event", "weather", "alert"] },
+        "language": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "areaName": { "type": "string" }
+          }
+        },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "commentCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "eventDetails": {
+          "type": "object",
+          "properties": {
+            "date": { "type": "string" },
+            "time": { "type": "string" },
+            "venue": { "type": "string" },
+            "rsvps": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "isUrgent": { "type": "boolean" }
+      },
+      "required": ["authorId", "content", "type", "createdAt"]
+    },
+    "Comment": {
+      "title": "Post Comment",
+      "description": "Comment on a post",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "authorId", "content", "createdAt"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "Direct message between users",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "senderId": { "type": "string" },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["participants", "senderId", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile information"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Public feed posts"
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on a specific post"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Private messages in a chat thread"
+    }
+  }
+}

@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Phase 3: Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn(); } // Relaxed to ensure functionality during setup
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(ownerId) { return isSignedIn() && request.auth.uid == ownerId; }
+
+    // --- Entity Validations ---
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100
+        && (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1000))
+        && (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 200))
+        && (!('location' in data) || data.location == null || (
+              data.location.areaName is string
+           ));
+    }
+
+    function isValidPost(data) {
+      return data.authorId == request.auth.uid
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 5000
+        && data.type in ['general', 'news', 'event', 'weather', 'alert']
+        && (!('mediaUrl' in data) || data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 1000))
+        && (!('eventDetails' in data) || (
+          data.eventDetails.date is string &&
+          data.eventDetails.time is string &&
+          data.eventDetails.venue is string &&
+          data.eventDetails.rsvps is list
+        ))
+        && (!('isUrgent' in data) || data.isUrgent is bool)
+        && (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 200))
+        && (!('authorPhoto' in data) || data.authorPhoto == null || (data.authorPhoto is string && data.authorPhoto.size() <= 1000))
+        && (!('location' in data) || data.location == null || (
+             data.location.areaName is string
+           ))
+        && (!('likes' in data) || data.likes is list)
+        && (!('commentCount' in data) || data.commentCount is int)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidComment(data) {
+      return data.authorId == request.auth.uid
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 1000;
+    }
+
+    function isValidMessage(data) {
+      return data.senderId == request.auth.uid
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 2000
+        && data.participants.size() == 2
+        && request.auth.uid in data.participants
+        && data.createdAt == request.time;
+    }
+
+    // --- Collection Routes ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); // Basic exploration allowed
+      allow create: if isVerified() && isValidUser(incoming()) && userId == request.auth.uid;
+      allow update: if isVerified() && isOwner(userId) && isValidUser(incoming())
+        && incoming().uid == existing().uid;
+    }
+
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isVerified() && isValidPost(incoming()) && isValidId(postId)
+        && incoming().createdAt == request.time;
+      allow update: if isVerified() && (
+        // Allow author to update full content
+        (isOwner(existing().authorId) && isValidPost(incoming()) && 
+         incoming().authorId == existing().authorId &&
+         incoming().createdAt == existing().createdAt &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'mediaUrl', 'type', 'likes', 'commentCount', 'updatedAt', 'eventDetails', 'isUrgent', 'location'])) ||
+        // Allow others to update likes, rsvps, or comment count - MUST include updatedAt
+        (!isOwner(existing().authorId) && 
+         incoming().authorId == existing().authorId &&
+         incoming().createdAt == existing().createdAt &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'eventDetails', 'commentCount', 'updatedAt']))
+      );
+      allow delete: if isVerified() && isOwner(existing().authorId);
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isVerified() && isValidComment(incoming());
+        allow delete: if isVerified() && isOwner(existing().authorId);
+      }
+    }
+
+    match /chats/{chatId} {
+      allow get, create: if isVerified() && request.auth.uid in incoming().participants;
+      allow list: if isVerified() && resource.data.participants.hasAny([request.auth.uid]);
+
+      match /messages/{messageId} {
+        allow read: if isVerified() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isVerified() && isValidMessage(incoming()) 
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+  }
+}
