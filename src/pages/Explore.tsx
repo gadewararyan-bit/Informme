@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getLocalInfo } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
-import { Cloud, Newspaper, Calendar, RefreshCw, MapPin } from 'lucide-react';
+import { Cloud, Newspaper, Calendar, RefreshCw, MapPin, Activity, Dumbbell } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Explore() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [localData, setLocalData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [areaName, setAreaName] = useState(user?.location?.areaName || 'Mumbai');
@@ -87,6 +89,22 @@ export default function Explore() {
               ))}
             </div>
           </div>
+
+          {/* Health & Fitness Card */}
+          <motion.div 
+            onClick={() => navigate('/health')}
+            className="group relative overflow-hidden bg-black border-4 border-black p-6 rounded-3xl cursor-pointer shadow-[8px_8px_0_0_rgba(25,135,84,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex flex-col gap-2 relative z-10">
+              <Activity className="w-10 h-10 text-india-green" />
+              <h3 className="text-2xl font-black text-white italic tracking-tighter">FITNESS & HEALTH</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Daily tips • Exercises • Diet plans</p>
+            </div>
+            <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-4 -translate-y-4">
+              <Dumbbell className="w-24 h-24 text-white" />
+            </div>
+          </motion.div>
         </div>
 
         {/* Right Column: News */}

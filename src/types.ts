@@ -5,6 +5,8 @@ export interface User {
   photoURL?: string;
   language?: string;
   bio?: string;
+  postCount?: number;
+  earnings?: number;
   location?: {
     lat: number;
     lng: number;

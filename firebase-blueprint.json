@@ -34,6 +34,7 @@
         "authorPhoto": { "type": "string" },
         "content": { "type": "string" },
         "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video"] },
         "type": { "type": "string", "enum": ["general", "news", "event", "weather", "alert"] },
         "language": { "type": "string" },
         "location": {
@@ -41,7 +42,8 @@
           "properties": {
             "lat": { "type": "number" },
             "lng": { "type": "number" },
-            "areaName": { "type": "string" }
+            "areaName": { "type": "string" },
+            "locationType": { "type": "string", "enum": ["home", "work", "public", "market", "other"] }
           }
         },
         "likes": { "type": "array", "items": { "type": "string" } },

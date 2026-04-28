@@ -52,6 +52,15 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
         >
           Connecting India Locally
         </motion.p>
+        
+        <motion.p
+          className="mt-2 text-[10px] font-black text-india-green uppercase tracking-[0.3em]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+        >
+          informme.co.in
+        </motion.p>
       </motion.div>
       
       {/* Ashoka Chakra background detail */}

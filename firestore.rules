@@ -13,6 +13,7 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isOwner(ownerId) { return isSignedIn() && request.auth.uid == ownerId; }
+    function isAdmin() { return isSignedIn() && request.auth.token.email.lower() == 'gadewarkalpna@gmail.com'; }
 
     // --- Entity Validations ---
 
@@ -22,6 +23,8 @@ service cloud.firestore {
         && (!('photoURL' in data) || data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1000))
         && (!('bio' in data) || data.bio == null || (data.bio is string && data.bio.size() <= 1000))
         && (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 200))
+        && (!('postCount' in data) || data.postCount is int)
+        && (!('earnings' in data) || data.earnings is int || data.earnings is float)
         && (!('location' in data) || data.location == null || (
               data.location.areaName is string
            ));
@@ -89,12 +92,12 @@ service cloud.firestore {
          incoming().createdAt == existing().createdAt &&
          incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'eventDetails', 'commentCount', 'updatedAt']))
       );
-      allow delete: if isVerified() && isOwner(existing().authorId);
+      allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
 
       match /comments/{commentId} {
         allow read: if isSignedIn();
         allow create: if isVerified() && isValidComment(incoming());
-        allow delete: if isVerified() && isOwner(existing().authorId);
+        allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
       }
     }
 

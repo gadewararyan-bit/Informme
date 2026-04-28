@@ -84,7 +84,7 @@ export default function PostDetails() {
       </div>
 
       <div className="p-4">
-        <PostCard post={post} />
+        <PostCard post={post} onDelete={() => navigate('/')} />
       </div>
 
       <div className="p-4 sm:p-6 space-y-6">

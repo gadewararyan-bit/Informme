@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +21,7 @@ export default function CreatePost() {
   const [locationType, setLocationType] = useState<'home' | 'work' | 'public' | 'market' | 'other' | null>(null);
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -68,7 +69,7 @@ export default function CreatePost() {
           areaName: locationName.trim() || user.location?.areaName || 'Mumbai',
           lat: user.location?.lat || 19.076,
           lng: user.location?.lng || 72.877,
-          locationType: locationType || undefined
+          locationType: locationType || null
         },
         likes: [],
         commentCount: 0,
@@ -89,6 +90,27 @@ export default function CreatePost() {
       }
 
       await addDoc(collection(db, 'posts'), postData);
+      
+      // Update user stats and rewards
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        const currentCount = (user.postCount || 0) + 1;
+        const currentEarnings = user.earnings || 0;
+        const reachedMilestone = currentCount % 100 === 0;
+        const newEarnings = reachedMilestone ? currentEarnings + 10 : currentEarnings;
+        
+        await updateDoc(userRef, {
+          postCount: currentCount,
+          earnings: newEarnings
+        });
+
+        if (reachedMilestone) {
+          setShowMilestone(true);
+          // Wait for user to see the milestone
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+
       navigate('/');
     } catch (error) {
       console.error("Error creating post:", error);
@@ -98,7 +120,24 @@ export default function CreatePost() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 pb-24">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6 pb-24 relative overflow-hidden">
+      <AnimatePresence>
+        {showMilestone && (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 1.5, opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+          >
+            <div className="bg-white border-8 border-black p-10 text-center brutalist-shadow max-w-sm">
+              <div className="text-6xl mb-4">🏆</div>
+              <h2 className="text-4xl font-black italic uppercase tracking-tighter mb-2">Milestone Reached!</h2>
+              <p className="font-bold text-xl mb-6 leading-tight">You've reached 100 posts and earned ₹10!</p>
+              <div className="text-india-green text-3xl font-black">+₹10 Added</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full border-2 border-black">
           <X className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
