@@ -47,3 +47,26 @@
 .animate-spin-slow {
   animation: spin-slow 20s linear infinite;
 }
+
+/* Custom Markdown Styling for AI Chat */
+.prose h3 {
+  @apply text-lg font-black uppercase tracking-tighter italic mb-2 mt-4 text-purple-700;
+}
+.prose p {
+  @apply mb-3 text-sm;
+}
+.prose ul, .prose ol {
+  @apply mb-4 ml-4 space-y-1;
+}
+.prose ul {
+  @apply list-disc;
+}
+.prose ol {
+  @apply list-decimal;
+}
+.prose li {
+  @apply pl-1;
+}
+.prose strong {
+  @apply font-black text-purple-700;
+}

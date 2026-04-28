@@ -3,14 +3,16 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/fi
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Image as ImageIcon, MapPin, Send, X, Video, Play, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, MapPin, Send, X, Video, Play, RefreshCw, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { validatePostContent } from '../services/aiService';
 
 export default function CreatePost() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [content, setContent] = useState('');
-  const [type, setType] = useState<'general' | 'news' | 'event' | 'weather' | 'alert'>('general');
+  const [type, setType] = useState<'general' | 'news' | 'event' | 'weather' | 'alert' | 'market'>('general');
+  const [priceData, setPriceData] = useState({ item: '', price: '', unit: 'kg' });
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [eventDate, setEventDate] = useState('');
@@ -18,10 +20,12 @@ export default function CreatePost() {
   const [eventVenue, setEventVenue] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
   const [locationName, setLocationName] = useState('');
+  const [pinCode, setPinCode] = useState('');
   const [locationType, setLocationType] = useState<'home' | 'work' | 'public' | 'market' | 'other' | null>(null);
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showMilestone, setShowMilestone] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -53,9 +57,18 @@ export default function CreatePost() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !user) return;
+    setValidationError(null);
 
     setIsLoading(true);
     try {
+      // AI Content Validation
+      const validation = await validatePostContent(content);
+      if (!validation.isSafe) {
+        setValidationError(validation.reason || "This content appears to be incorrect, spam, or fake news. Please provide truthful information.");
+        setIsLoading(false);
+        return;
+      }
+
       const postData: any = {
         authorId: user.uid,
         authorName: user.displayName,
@@ -67,6 +80,7 @@ export default function CreatePost() {
         language: user.language || 'en',
         location: {
           areaName: locationName.trim() || user.location?.areaName || 'Mumbai',
+          pinCode: pinCode.trim() || user.location?.pinCode || null,
           lat: user.location?.lat || 19.076,
           lng: user.location?.lng || 72.877,
           locationType: locationType || null
@@ -87,6 +101,10 @@ export default function CreatePost() {
 
       if (type === 'alert') {
         postData.isUrgent = isUrgent;
+      }
+
+      if (type === 'market') {
+        postData.priceData = priceData;
       }
 
       await addDoc(collection(db, 'posts'), postData);
@@ -147,9 +165,25 @@ export default function CreatePost() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <AnimatePresence>
+          {validationError && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 border-4 border-red-600 p-4 rounded-2xl flex items-start gap-3 shadow-[4px_4px_0_0_rgb(220,38,38)]"
+            >
+              <AlertTriangle className="w-6 h-6 text-red-600 shrink-0" />
+              <div>
+                <h3 className="font-black uppercase italic text-red-600 text-sm">Action Blocked</h3>
+                <p className="text-[10px] font-bold text-red-700 uppercase tracking-tight leading-tight mt-1">{validationError}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Type Selector */}
         <div className="flex gap-2 overflow-x-auto pb-4 px-1 scrollbar-hide -mx-1">
-          {['general', 'news', 'event', 'weather', 'alert'].map((t) => (
+          {['general', 'news', 'market', 'event', 'weather', 'alert'].map((t) => (
             <button
               key={t}
               type="button"
@@ -160,10 +194,104 @@ export default function CreatePost() {
                 : 'bg-white text-gray-400 border-gray-100 hover:border-black active:shadow-none'
               }`}
             >
-              {t}
+              {t === 'market' ? '🛒 Price Update' : t}
             </button>
           ))}
         </div>
+
+        {type === 'market' && (
+          <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-top-4 bg-saffron/10 p-4 sm:p-6 rounded-3xl border-4 border-saffron shadow-[8px_8px_0_0_rgba(255,153,51,1)]">
+            <h3 className="text-base sm:text-lg font-black uppercase italic text-saffron flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin-slow" />
+              Vendor Price Update
+            </h3>
+            <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+              <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Product Name</label>
+              <input 
+                type="text" 
+                required={type === 'market'}
+                value={priceData.item}
+                onChange={(e) => setPriceData({ ...priceData, item: e.target.value })}
+                placeholder="e.g. Potato / Onion / Milk"
+                className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Price (₹)</label>
+                <div className="flex items-center gap-1">
+                  <span className="font-black text-sm">₹</span>
+                  <input 
+                    type="number" 
+                    required={type === 'market'}
+                    value={priceData.price}
+                    onChange={(e) => setPriceData({ ...priceData, price: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
+                  />
+                </div>
+              </div>
+              <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Unit</label>
+                <select 
+                  value={priceData.unit}
+                  onChange={(e) => setPriceData({ ...priceData, unit: e.target.value })}
+                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0 appearance-none uppercase"
+                >
+                  <option value="kg">Per KG</option>
+                  <option value="dozen">Per Dozen</option>
+                  <option value="piece">Per Piece</option>
+                  <option value="liter">Per Liter</option>
+                  <option value="pau">Per Pau (250g)</option>
+                  <option value="gram">Per 100g</option>
+                </select>
+              </div>
+            </div>
+            <p className="text-[10px] font-black uppercase text-saffron/60 italic leading-tight">TIP: Upload an image of your Rate Board or Cart for verification!</p>
+          </div>
+        )}
+
+        {type === 'event' && (
+          <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-top-4 bg-blue-50 p-4 sm:p-6 rounded-3xl border-4 border-blue-600 shadow-[8px_8px_0_0_rgba(37,99,235,1)]">
+            <h3 className="text-base sm:text-lg font-black uppercase italic text-blue-600 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin-slow" />
+              Event Details (Required)
+            </h3>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Date</label>
+                <input 
+                  type="date" 
+                  required={type === 'event'}
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
+                />
+              </div>
+              <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Time</label>
+                <input 
+                  type="time" 
+                  required={type === 'event'}
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
+                />
+              </div>
+            </div>
+            <div className="bg-white border-2 border-black p-3 sm:p-4 rounded-2xl">
+              <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Venue / Location Details</label>
+              <input 
+                type="text" 
+                required={type === 'event'}
+                value={eventVenue}
+                onChange={(e) => setEventVenue(e.target.value)}
+                placeholder="Where exactly in Mumbai? (e.g. Phoenix Mall)"
+                className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
+              />
+            </div>
+          </div>
+        )}
 
         {type === 'alert' && (
            <div 
@@ -245,14 +373,23 @@ export default function CreatePost() {
               <div className="space-y-4">
                 <div className="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-blue-500" />
-                  <input 
-                    type="text" 
-                    value={locationName}
-                    onChange={(e) => setLocationName(e.target.value)}
-                    placeholder="Enter area name (e.g. Bandra West)"
-                    className="flex-1 bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0 text-black placeholder-gray-300"
-                    autoFocus
-                  />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <input 
+                      type="text" 
+                      value={locationName}
+                      onChange={(e) => setLocationName(e.target.value)}
+                      placeholder="Area Name (e.g. Bandra West)"
+                      className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0 text-black placeholder-gray-300 border-b border-gray-100"
+                    />
+                    <input 
+                      type="text" 
+                      value={pinCode}
+                      onChange={(e) => setPinCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="Pincode (e.g. 400050)"
+                      className="w-full bg-transparent border-none p-0 text-[10px] sm:text-xs font-bold focus:ring-0 text-black placeholder-gray-300"
+                      inputMode="numeric"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -307,42 +444,6 @@ export default function CreatePost() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {type === 'event' && (
-          <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-top-4">
-            <h3 className="text-base sm:text-lg font-black uppercase italic">Event Details</h3>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl">
-                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Date</label>
-                <input 
-                  type="date" 
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
-                />
-              </div>
-              <div className="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl">
-                <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Time</label>
-                <input 
-                  type="time" 
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
-                />
-              </div>
-            </div>
-            <div className="bg-white border-4 border-black p-3 sm:p-4 rounded-2xl">
-              <label className="block text-[8px] sm:text-[10px] font-black uppercase text-gray-400 mb-1">Venue / Location Details</label>
-              <input 
-                type="text" 
-                value={eventVenue}
-                onChange={(e) => setEventVenue(e.target.value)}
-                placeholder="Where is it happening?"
-                className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:ring-0"
-              />
-            </div>
-          </div>
-        )}
 
         <button
           type="submit"

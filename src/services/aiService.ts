@@ -109,6 +109,29 @@ export async function translateContent(text: string, targetLanguage: string) {
   }
 }
 
+export async function validatePostContent(text: string): Promise<{ isSafe: boolean; reason?: string }> {
+  try {
+    const response = await withRetry(() => ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `You are a local community moderator for InformMe. Analyze this post content for:
+      1. Fake news or obvious misinformation (medical, political, social).
+      2. Spam or commercial repetitive junk.
+      3. Hate speech, harassment, or bullying.
+      4. Low-quality content or irrelevant gossip.
+
+      Post: "${text}"
+
+      Return ONLY a JSON object:
+      { "isSafe": boolean, "reason": "Short explanation in simple language why it's not safe, or null if safe" }`,
+    }));
+
+    return safeJsonParse(response.text) || { isSafe: true };
+  } catch (error: any) {
+    console.error('Validation error:', error.message || error);
+    return { isSafe: true };
+  }
+}
+
 export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', language: string) {
   try {
     const response = await withRetry(() => ai.models.generateContent({
@@ -142,10 +165,21 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
 
 export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en') {
   try {
-    const systemInstruction = `You are "AI Informer", the official AI assistant for the India Informer app. 
+    const systemInstruction = `You are "AI Informer", an advanced Educational AI Assistant for the InformMe platform. 
     You were founded and developed by Aryan. 
-    Your goal is to help users with local news, health tips, and general questions about India.
-    Keep your responses concise, helpful, and polite. 
+
+    Your Approach:
+    - You act as a highly knowledgeable mentor and tutor.
+    - For every question, you MUST provide a structured, "Step-by-Step" answer. 
+    - NEVER provide long, unstructured blocks of text.
+    - Use Markdown formatting: Use bold headers for each step, numbered lists, and bullet points for clarity.
+    
+    Response Structure:
+    1. **Overview**: A brief 1-sentence summary of the answer.
+    2. **Step-by-Step Breakdown**: Use "Step 1:", "Step 2:", etc., with bold titles.
+    3. **Key Takeaway/Pro-Tip**: A concluding educational insight.
+
+    You are an expert in all subjects (Science, Tech, History, Culture, etc.) and your goal is to help the user learn and understand deeply.
     Use the user's preferred language: ${language}.`;
 
     const contents = messages.map(msg => ({

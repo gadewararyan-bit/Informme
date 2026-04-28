@@ -5,7 +5,6 @@ import SplashScreen from './components/layout/SplashScreen';
 import BottomNav from './components/layout/BottomNav';
 import EmergencyAlert from './components/EmergencyAlert';
 import Home from './pages/Home';
-import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
@@ -16,6 +15,7 @@ import CreatePost from './pages/CreatePost';
 import Events from './pages/Events';
 import Health from './pages/Health';
 import AIChat from './pages/AIChat';
+import NotificationSystem from './components/NotificationSystem';
 
 import { ADMIN_EMAIL } from './constants';
 
@@ -36,17 +36,14 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 max-w-[500px] mx-auto shadow-2xl relative overflow-x-hidden">
       {user && <EmergencyAlert />}
+      {user && <NotificationSystem />}
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         <Route
           path="/"
           element={user ? <Home /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/explore"
-          element={user ? <Explore /> : <Navigate to="/login" />}
         />
         <Route
           path="/events"
@@ -86,19 +83,21 @@ function AppContent() {
         />
       </Routes>
       {user && <BottomNav />}
-      <footer className="py-12 px-4 pb-32 text-center bg-gray-100 border-t-4 border-black mt-auto">
-        <p className="text-[12px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">
+      <footer className="py-6 px-4 pb-28 text-center border-t-2 border-dashed border-gray-200 mt-auto w-full">
+        <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">
           Founded and developed by <span className="text-black">Aryan</span>
         </p>
-        <a 
-          href="https://informme.co.in" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-india-green font-black text-sm uppercase tracking-widest hover:underline block mb-4"
-        >
-          informme.co.in
-        </a>
-        <p className="text-[10px] font-bold text-gray-400 uppercase">© 2024 India Informer. All Rights Reserved.</p>
+        <div className="flex items-center justify-center gap-4">
+          <a 
+            href="https://informme.co.in" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-india-green font-black text-[10px] uppercase tracking-widest hover:underline"
+          >
+            informme.co.in
+          </a>
+          <p className="text-[9px] font-bold text-gray-300 uppercase">© 2024 India Informer. All Rights Reserved.</p>
+        </div>
       </footer>
     </div>
   );

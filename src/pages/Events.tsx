@@ -31,10 +31,10 @@ export default function Events() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-10">
-      <header className="flex items-center justify-between border-b-[6px] border-black pb-8 mb-10 gap-4">
+    <div className="w-full p-4 sm:p-10 pb-24">
+      <header className="flex items-center justify-between border-b-[6px] border-black pb-8 mb-8 gap-4">
         <div>
-          <h1 className="text-4xl sm:text-6xl font-black italic uppercase tracking-tighter">Local Events</h1>
+          <h1 className="text-4xl sm:text-6xl font-black italic uppercase tracking-tighter">Events</h1>
           <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mt-2">Discover what's happening near {user?.location?.areaName || 'you'}</p>
         </div>
         <div className="p-3 sm:p-4 bg-blue-500 border-4 border-black rounded-2xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] shrink-0">
@@ -49,7 +49,7 @@ export default function Events() {
          <button className="px-6 py-2 border-2 border-black rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">Meetups</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-2xl border-2 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)]" />

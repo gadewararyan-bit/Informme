@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Globe, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { MapPin, Globe, Check, ArrowLeft, Loader2, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const LANGUAGES = [
@@ -23,20 +23,32 @@ export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [areaName, setAreaName] = useState(user?.location?.areaName || '');
+  const [pinCode, setPinCode] = useState(user?.location?.pinCode || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [language, setLanguage] = useState(user?.language || 'en');
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
+  );
 
   useEffect(() => {
     if (user) {
       setAreaName(user.location?.areaName || '');
+      setPinCode(user.location?.pinCode || '');
       setDisplayName(user.displayName || '');
       setBio(user.bio || '');
       setLanguage(user.language || 'en');
     }
   }, [user]);
+
+  const handleRequestNotif = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotifPermission(permission);
+    }
+  };
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,6 +61,7 @@ export default function Settings() {
         displayName: displayName.trim(),
         bio: bio.trim(),
         'location.areaName': areaName.trim(),
+        'location.pinCode': pinCode.trim(),
         language
       });
       setSuccess(true);
@@ -121,21 +134,72 @@ export default function Settings() {
             <h2 className="text-xl font-black uppercase italic tracking-tight">Your Location</h2>
           </div>
           
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black uppercase text-gray-400 tracking-widest">
-              Area or City Name
-            </label>
-            <input 
-              type="text" 
-              value={areaName}
-              onChange={(e) => setAreaName(e.target.value)}
-              placeholder="e.g. Bandra, Mumbai"
-              className="w-full bg-gray-50 border-4 border-black rounded-2xl p-4 text-sm font-bold focus:ring-0"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                Area or City Name
+              </label>
+              <input 
+                type="text" 
+                value={areaName}
+                onChange={(e) => setAreaName(e.target.value)}
+                placeholder="e.g. Bandra, Mumbai"
+                className="w-full bg-gray-50 border-4 border-black rounded-2xl p-4 text-sm font-bold focus:ring-0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                PIN Code / ZIP Code
+              </label>
+              <input 
+                type="text" 
+                value={pinCode}
+                onChange={(e) => setPinCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="6-digit PIN Code"
+                className="w-full bg-gray-50 border-4 border-black rounded-2xl p-4 text-sm font-bold focus:ring-0"
+                inputMode="numeric"
+              />
+            </div>
+
             <p className="text-[10px] font-bold text-gray-400 italic">
               Weather and local news will be updated based on this location.
             </p>
           </div>
+        </div>
+        
+        {/* Notifications Section */}
+        <div className="bg-white border-4 border-black p-6 rounded-3xl brutalist-shadow">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-red-500 rounded-lg border-2 border-black">
+              <Bell className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-black uppercase italic tracking-tight">Notifications</h2>
+          </div>
+          
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-black uppercase tracking-tight">Event Reminders (24h)</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Get notified a day before events you RSVP to</p>
+            </div>
+            
+            {notifPermission === 'granted' ? (
+               <div className="flex items-center gap-1.5 text-india-green font-black uppercase text-[10px] bg-green-50 px-3 py-1.5 rounded-full border border-india-green">
+                 <Check className="w-3 h-3" /> Enabled
+               </div>
+            ) : (
+              <button 
+                type="button"
+                onClick={handleRequestNotif}
+                className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest brutalist-shadow-sm active:translate-y-0.5 active:shadow-none transition-all"
+              >
+                Enable
+              </button>
+            )}
+          </div>
+          {notifPermission === 'denied' && (
+            <p className="mt-3 text-[8px] font-bold text-red-600 uppercase">You have blocked notifications in your browser. Please reset site permissions to enable.</p>
+          )}
         </div>
 
         {/* Language Section */}

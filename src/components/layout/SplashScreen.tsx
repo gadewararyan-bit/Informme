@@ -6,7 +6,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#FDFDFD]"
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
-      transition={{ delay: 2.5, duration: 0.5 }}
+      transition={{ delay: 1.2, duration: 0.5 }}
       onAnimationComplete={onComplete}
     >
       {/* Decorative colored bars in corners */}

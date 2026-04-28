@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, HelpCircle } from 'lucide-react';
 import { chatWithAI } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'model';
@@ -15,7 +16,16 @@ const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
-      content: `Hello! I am AI Informer, developed by Aryan. How can I help you today? You can ask me about local news, health tips, or anything else about India!`,
+      content: `### Welcome to AI Informer!
+I am your advanced Educational Assistant. My goal is to help you understand anything by breaking it down into simple, logical steps.
+
+**You can ask me:**
+*   "Explain how quantum computers work step-by-step"
+*   "How to cook a perfect Biryani?"
+*   "Steps to clear a Civil Service exam"
+*   "How does photosynthesis work?"
+
+How can I help you learn something new today?`,
       timestamp: new Date()
     }
   ]);
@@ -66,22 +76,25 @@ const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
+    <div className="h-[100dvh] bg-gray-50 flex flex-col pb-20 overflow-hidden relative">
       {/* Header */}
-      <header className="bg-white border-b-4 border-black p-6 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <header className="bg-white border-b-4 border-black p-4 shrink-0 z-10">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500 border-2 border-black rounded-xl brutalist-shadow">
-              <Bot className="w-5 h-5 text-white" />
+            <div className="p-1.5 bg-purple-500 border-2 border-black rounded-xl brutalist-shadow">
+              <Bot className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tighter italic">AI Informer</h1>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Powered by Gemini • Dev: Aryan</p>
+              <h1 className="text-xl font-black uppercase tracking-tighter italic flex items-center gap-2">
+                AI Informer
+                <span className="text-[10px] bg-black text-white px-1.5 py-0.5 rounded not-italic tracking-normal">EDU</span>
+              </h1>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Aryan's AI • Step-by-Step</p>
             </div>
           </div>
           <div className="bg-purple-100 px-3 py-1 border-2 border-black rounded-full flex items-center gap-2">
             <Sparkles className="w-3 h-3 text-purple-600" />
-            <span className="text-[10px] font-black uppercase text-purple-600">Smart Assistant</span>
+            <span className="text-[10px] font-black uppercase text-purple-600">Smart</span>
           </div>
         </div>
       </header>
@@ -102,11 +115,13 @@ const AIChat: React.FC = () => {
                 >
                   {message.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
                 </div>
-                <div className={`p-4 rounded-2xl border-4 border-black font-bold text-sm leading-relaxed brutalist-shadow
-                  ${message.role === 'user' ? 'bg-white' : 'bg-purple-50'}`}
+                <div className={`p-4 rounded-2xl border-4 border-black text-sm leading-relaxed brutalist-shadow
+                  ${message.role === 'user' ? 'bg-white font-bold' : 'bg-purple-50'}`}
                 >
-                  {message.content}
-                  <div className="mt-2 text-[8px] text-gray-400 uppercase font-black">
+                  <div className="prose prose-sm max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-strong:text-purple-600">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                  <div className="mt-2 text-[8px] text-gray-400 uppercase font-black border-t-2 border-black/5 pt-2">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -153,20 +168,27 @@ const AIChat: React.FC = () => {
             <Send className="w-5 h-5" />
           </button>
         </form>
-        <div className="mt-3 flex justify-center gap-4">
+        <div className="mt-3 flex justify-center gap-3 flex-wrap">
           <button 
             type="button"
-            onClick={() => setInput("What's the news in my area?")}
-            className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1 rounded-full hover:bg-gray-50 active:translate-y-0.5 transition-all shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
+            onClick={() => setInput("Explain any science topic step-by-step")}
+            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
           >
-            Local News
+            Science Steps
           </button>
           <button 
             type="button"
-            onClick={() => setInput("Give me a health tip")}
-            className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1 rounded-full hover:bg-gray-50 active:translate-y-0.5 transition-all shadow-[2px_2px_0_0_rgba(0,0,0,1)]"
+            onClick={() => setInput("Help me solve a math problem")}
+            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
           >
-            Health Tips
+            Math Help
+          </button>
+          <button 
+            type="button"
+            onClick={() => setInput("How can I improve my English?")}
+            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
+          >
+            English Tips
           </button>
         </div>
       </div>

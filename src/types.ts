@@ -11,7 +11,9 @@ export interface User {
     lat: number;
     lng: number;
     areaName: string;
+    pinCode?: string;
   };
+  fcmTokens?: string[];
   createdAt?: any;
   updatedAt?: any;
 }
@@ -24,15 +26,22 @@ export interface Post {
   content: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
-  type: 'general' | 'news' | 'event' | 'weather' | 'alert';
+  type: 'general' | 'news' | 'event' | 'weather' | 'alert' | 'market';
   language: string;
+  priceData?: {
+    item: string;
+    price: string;
+    unit: string;
+  };
   location?: {
     lat: number;
     lng: number;
     areaName: string;
+    pinCode?: string;
     locationType?: 'home' | 'work' | 'public' | 'market' | 'other';
   };
   likes: string[];
+  reports?: string[];
   commentCount: number;
   createdAt: any;
   // Event specific
