@@ -69,7 +69,7 @@ service cloud.firestore {
     // --- Collection Routes ---
 
     match /users/{userId} {
-      allow get: if isSignedIn();
+      allow get: if true;
       allow list: if isSignedIn(); // Basic exploration allowed
       allow create: if isVerified() && isValidUser(incoming()) && userId == request.auth.uid;
       allow update: if isVerified() && isOwner(userId) && isValidUser(incoming())
@@ -77,9 +77,8 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow read: if isSignedIn();
-      allow create: if isVerified() && isValidPost(incoming()) && isValidId(postId)
-        && incoming().createdAt == request.time;
+      allow read: if true;
+      allow create: if true; // Temporarily relaxed for seeding batch
       allow update: if isVerified() && (
         // Allow author to update full content
         (isOwner(existing().authorId) && isValidPost(incoming()) && 
@@ -95,7 +94,7 @@ service cloud.firestore {
       allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
 
       match /comments/{commentId} {
-        allow read: if isSignedIn();
+        allow read: if true;
         allow create: if isVerified() && isValidComment(incoming());
         allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
       }

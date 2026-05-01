@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { TranslationProvider } from './contexts/TranslationContext';
 import SplashScreen from './components/layout/SplashScreen';
 import BottomNav from './components/layout/BottomNav';
 import EmergencyAlert from './components/EmergencyAlert';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
+import PlatformPulse from './pages/PlatformPulse';
 import Settings from './pages/Settings';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
@@ -14,14 +16,22 @@ import PostDetails from './pages/PostDetails';
 import CreatePost from './pages/CreatePost';
 import Events from './pages/Events';
 import Health from './pages/Health';
+import OwnerPortal from './pages/OwnerPortal';
 import AIChat from './pages/AIChat';
+import Pricing from './pages/Pricing';
 import NotificationSystem from './components/NotificationSystem';
+import AdminFooter from './components/layout/AdminFooter';
 
-import { ADMIN_EMAIL } from './constants';
+import { ADMIN_EMAILS, APP_CONFIG } from './constants';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    // Splash screen timer
+  }, []);
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
@@ -29,75 +39,49 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-[#FF9933] border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen w-screen flex items-center justify-center bg-[#F8F9FA]">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 max-w-[500px] mx-auto shadow-2xl relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24 max-w-full md:max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-lg 2xl:max-w-screen-xl mx-auto relative overflow-x-hidden shadow-2xl bg-white">
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div 
+            initial={{ y: -50 }}
+            animate={{ y: 0 }}
+            exit={{ y: -50 }}
+            className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] w-full max-w-[500px] bg-red-600 text-white text-center py-2 text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
+          >
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            SYNCHRONIZING NETWORK
+          </motion.div>
+        )}
+      </AnimatePresence>
       {user && <EmergencyAlert />}
       {user && <NotificationSystem />}
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        <Route
-          path="/"
-          element={user ? <Home /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/events"
-          element={user ? <Events /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/profile"
-          element={user ? <Profile /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/admin"
-          element={user && user.email?.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() ? <AdminDashboard /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/settings"
-          element={user ? <Settings /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/chat"
-          element={user ? <Chat /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/add"
-          element={user ? <CreatePost /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/post/:id"
-          element={user ? <PostDetails /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/health"
-          element={user ? <Health /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/ai-chat"
-          element={user ? <AIChat /> : <Navigate to="/login" />}
-        />
+        <Route path="/" element={user ? <Home /> : <Home />} />
+        <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/owner-portal" element={(user && user.isAdmin) ? <OwnerPortal /> : <Navigate to="/" />} />
+        <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
+        <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
+        <Route path="/add" element={user ? <CreatePost /> : <Navigate to="/login" />} />
+        <Route path="/post/:id" element={<PostDetails />} />
+        <Route path="/health" element={user ? <Health /> : <Navigate to="/login" />} />
+        <Route path="/ai-chat" element={user ? <AIChat /> : <Navigate to="/login" />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {user && <BottomNav />}
-      <footer className="py-6 px-4 pb-28 text-center border-t-2 border-dashed border-gray-200 mt-auto w-full">
-        <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">
-          Founded and developed by <span className="text-black">Aryan</span>
+      <BottomNav />
+      <footer className="py-12 px-4 text-center mt-auto w-full">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-200">
+          PRO VERSION • {APP_CONFIG.year} {APP_CONFIG.developer}
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <a 
-            href="https://informme.co.in" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-india-green font-black text-[10px] uppercase tracking-widest hover:underline"
-          >
-            informme.co.in
-          </a>
-          <p className="text-[9px] font-bold text-gray-300 uppercase">© 2024 India Informer. All Rights Reserved.</p>
-        </div>
       </footer>
     </div>
   );
@@ -107,7 +91,9 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <TranslationProvider>
+          <AppContent />
+        </TranslationProvider>
       </AuthProvider>
     </Router>
   );

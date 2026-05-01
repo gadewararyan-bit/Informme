@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { APP_CONFIG } from '../../constants';
 
 export default function SplashScreen({ onComplete }: { onComplete: () => void }) {
   return (
@@ -59,7 +60,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
         >
-          informme.co.in
+          {APP_CONFIG.domain}
         </motion.p>
       </motion.div>
       

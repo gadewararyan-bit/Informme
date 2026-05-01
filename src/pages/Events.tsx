@@ -31,35 +31,37 @@ export default function Events() {
   }, []);
 
   return (
-    <div className="w-full p-4 sm:p-10 pb-24">
-      <header className="flex items-center justify-between border-b-[6px] border-black pb-8 mb-8 gap-4">
+    <div className="w-full max-w-[500px] mx-auto p-6 pb-24 bg-[#F8F9FA] min-h-screen">
+      <header className="flex items-center justify-between mb-10 pt-6">
         <div>
-          <h1 className="text-4xl sm:text-6xl font-black italic uppercase tracking-tighter">Events</h1>
-          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mt-2">Discover what's happening near {user?.location?.areaName || 'you'}</p>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">Events</h1>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-2">Discovery Protocol • {user?.location?.areaName || 'Local Node'}</p>
         </div>
-        <div className="p-3 sm:p-4 bg-blue-500 border-4 border-black rounded-2xl shadow-[4px_4px_0_0_rgba(0,0,0,1)] shrink-0">
-           <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+        <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-indigo-600/10 transition-transform hover:scale-110">
+           <Calendar className="w-6 h-6" />
         </div>
       </header>
 
-      <div className="flex items-center gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-         <button className="px-6 py-2 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest">Upcoming</button>
-         <button className="px-6 py-2 border-2 border-black rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">This Weekend</button>
-         <button className="px-6 py-2 border-2 border-black rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">Workshops</button>
-         <button className="px-6 py-2 border-2 border-black rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">Meetups</button>
+      <div className="flex items-center gap-3 mb-8 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
+         <button className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest pro-shadow shadow-indigo-200 ring-1 ring-black/[0.05]">Upcoming</button>
+         <button className="px-5 py-2.5 bg-white text-gray-400 border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all pro-shadow">Weekend</button>
+         <button className="px-5 py-2.5 bg-white text-gray-400 border border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all pro-shadow">Meetups</button>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="space-y-6">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-2xl border-2 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)]" />
+            <div key={i} className="h-48 bg-white pro-shadow rounded-[32px] animate-pulse border border-gray-100" />
           ))
         ) : events.length > 0 ? (
-          events.map(event => <div key={event.id}><PostCard post={event} /></div>)
+          events.map(event => <PostCard key={event.id} post={event} />)
         ) : (
-          <div className="col-span-full text-center py-24 bg-[#F5F5F5] rounded-3xl border-4 border-dashed border-gray-200">
-             <p className="text-2xl font-black uppercase text-gray-300 italic">No events found</p>
-             <p className="text-sm font-bold text-gray-400 mt-2 uppercase tracking-widest">Be the one to organize something!</p>
+          <div className="text-center py-24 bg-white rounded-[40px] pro-shadow border border-gray-100 border-dashed">
+             <div className="w-16 h-16 bg-gray-50 text-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-8 h-8" />
+             </div>
+             <p className="text-lg font-black uppercase text-gray-300 italic tracking-tighter">No transmissions detected</p>
+             <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">Broadcast a new event to the community</p>
           </div>
         )}
       </div>

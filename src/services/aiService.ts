@@ -6,13 +6,48 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
   try {
     return await fn();
   } catch (error: any) {
-    const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429;
+    const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429 || error?.message?.includes('quota');
     if (isRateLimit && retries > 0) {
       console.warn(`Gemini API throttled. Retrying in ${delay}ms... (${retries} attempts left)`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
     throw error;
+  }
+}
+
+// Global cache to avoid redundant calls within the same session
+const sessionCache: Record<string, { data: any, timestamp: number }> = {};
+
+function getCachedData(key: string, ttlMs: number) {
+  // Check session cache first
+  if (sessionCache[key] && (Date.now() - sessionCache[key].timestamp < ttlMs)) {
+    return sessionCache[key].data;
+  }
+  
+  // Check localStorage
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached && (Date.now() - cached.timestamp < ttlMs)) {
+        return cached.data;
+      }
+    }
+  } catch (e) {
+    console.warn("Cache parse error", e);
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any) {
+  const entry = { data, timestamp: Date.now() };
+  sessionCache[key] = entry;
+  try {
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (e) {
+    console.warn("Storage full, clearing old cache");
+    localStorage.clear();
   }
 }
 
@@ -42,29 +77,25 @@ function safeJsonParse(text: string | undefined | null) {
 }
 
 export async function getLocalInfo(area: string, language: string) {
+  const cacheKey = `local_info_${area}_${language}`;
+  const ttl = 4 * 60 * 60 * 1000; // 4 hours
+
+  const cachedResult = getCachedData(cacheKey, ttl);
+  if (cachedResult) return cachedResult;
+
   try {
     const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `You are a local information assistant for the app InformMe. 
-      The user is in ${area}, India. Their preferred language is ${language}.
-      Provide accurate and CURRENT information for:
-      1. Local weather today in ${area} including current temperature and specific conditions.
-      2. Top 2-3 local news headlines for ${area} or surrounding region from the last 24 hours.
-      3. Upcoming local events or festivals in the next week.
+      contents: `User in ${area}, India. Preferred language: ${language}.
+      Return CURRENT local weather, top 2-3 news headlines (last 24h), and 3 upcoming events.
       
-      If you are unsure about the current weather, provide a realistic estimate based on the current season in India (it is April/May).
-      
-      Format the response strictly as a JSON object:
+      Format strictly as JSON:
       {
-        "weather": { "temp": "e.g. 32°C", "condition": "e.g. Sunny", "description": "Short description" },
-        "news": [
-          { "title": "Headline in ${language}", "summary": "Summary in ${language}" }
-        ],
-        "events": [
-          { "title": "Event name in ${language}", "date": "Date", "location": "Venue" }
-        ]
+        "weather": { "temp": "32°C", "condition": "Sunny", "description": "Hot day" },
+        "news": [{ "title": "Headline", "summary": "Brief summary" }],
+        "events": [{ "title": "Name", "date": "Date", "location": "Venue" }]
       }
-      Translate all titles and descriptions to ${language} if it's not English.`,
+      Translate all values to ${language}.`,
       config: {
         responseMimeType: "application/json",
         tools: [
@@ -76,9 +107,11 @@ export async function getLocalInfo(area: string, language: string) {
       }
     }));
 
-    return safeJsonParse(response.text);
+    const result = safeJsonParse(response.text);
+    if (result) setCachedData(cacheKey, result);
+    return result;
   } catch (error: any) {
-    if (error?.message?.includes('429')) {
+    if (error?.message?.includes('429') || error?.message?.includes('quota')) {
       console.warn("AI Quota Exceeded (429) for Local Info");
     } else {
       console.error("Gemini API Error (Local Info):", error.message || error);
@@ -88,6 +121,12 @@ export async function getLocalInfo(area: string, language: string) {
 }
 
 export async function translateContent(text: string, targetLanguage: string) {
+  const cacheKey = `trans_${btoa(text.substring(0, 50))}_${targetLanguage}`;
+  const ttl = 24 * 60 * 60 * 1000; // 24 hours (translations rarely change)
+  
+  const cached = getCachedData(cacheKey, ttl);
+  if (cached) return cached;
+
   try {
     const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -98,7 +137,9 @@ export async function translateContent(text: string, targetLanguage: string) {
       ${text}`,
     }));
 
-    return response.text || text;
+    const result = response.text || text;
+    setCachedData(cacheKey, result);
+    return result;
   } catch (error: any) {
     if (error?.message?.includes('429')) {
       console.warn("AI Quota Exceeded (429) for Translation");
@@ -163,33 +204,36 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
   }
 }
 
-export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en') {
+export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en', isPremium: boolean = false) {
   try {
-    const systemInstruction = `You are "AI Informer", an advanced Educational AI Assistant for the InformMe platform. 
-    You were founded and developed by Aryan. 
-
-    Your Approach:
-    - You act as a highly knowledgeable mentor and tutor.
-    - For every question, you MUST provide a structured, "Step-by-Step" answer. 
-    - NEVER provide long, unstructured blocks of text.
-    - Use Markdown formatting: Use bold headers for each step, numbered lists, and bullet points for clarity.
-    
-    Response Structure:
-    1. **Overview**: A brief 1-sentence summary of the answer.
-    2. **Step-by-Step Breakdown**: Use "Step 1:", "Step 2:", etc., with bold titles.
-    3. **Key Takeaway/Pro-Tip**: A concluding educational insight.
-
-    You are an expert in all subjects (Science, Tech, History, Culture, etc.) and your goal is to help the user learn and understand deeply.
-    Use the user's preferred language: ${language}.`;
+    const modelTier = isPremium ? "gemini-1.5-pro" : "gemini-3-flash-preview";
+    const systemInstruction = isPremium 
+      ? `You are "AI Pro Terminal", a highly advanced Artificial Intelligence core. 
+         You provide extremely detailed, deep, and creative responses. 
+         You are an expert tutor and problem solver.
+         
+         Structure:
+         1. **Deep Analysis**: Core understanding of the query.
+         2. **Advanced Breakdown**: Multi-step, nuanced exploration.
+         3. **Pro-Intelligence Insight**: A unique high-level perspective.
+         
+         Translate everything to ${language}.`
+      : `You are "Basic Neural Node", an helpful community AI assistant. 
+         Provide clear, simple, and concise step-by-step educational answers.
+         
+         Response Structure:
+         1. **Short Summary**
+         2. **Steps**: Clear bullet points.
+         
+         Use ${language}.`;
 
     const contents = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model' as const,
       parts: [{ text: msg.content }]
     }));
 
-    // Inject system instruction if it's the first message or prepend it
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: modelTier,
       contents: [
         { role: 'user', parts: [{ text: "Context: " + systemInstruction }] },
         ...contents

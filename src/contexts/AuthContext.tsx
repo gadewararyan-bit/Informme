@@ -3,16 +3,17 @@ import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { User } from '../types';
+import { ADMIN_EMAILS } from '../constants';
 
 interface AuthContextType {
-  user: User | null;
+  user: (User & { isAdmin?: boolean }) | null;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<(User & { isAdmin?: boolean }) | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,11 +27,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
+        const isAdmin = firebaseUser.email && ADMIN_EMAILS.includes(firebaseUser.email.trim().toLowerCase());
         
+        console.log('Auth State Change:', { email: firebaseUser.email, isAdmin });
+
         // Use onSnapshot for real-time updates
         unsubscribeDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
-            setUser(docSnap.data() as User);
+            const data = docSnap.data() as User;
+            // Ensure email is present from firebaseUser if missing in doc
+            if (!data.email && firebaseUser.email) {
+              data.email = firebaseUser.email;
+            }
+            setUser({ ...data, isAdmin: !!isAdmin });
             setLoading(false);
           } else {
             // New user setup - only if document doesn't exist
@@ -48,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               language: 'en'
             };
             await setDoc(userRef, newUser);
-            // onSnapshot will trigger again after setDoc
           }
         });
       } else {

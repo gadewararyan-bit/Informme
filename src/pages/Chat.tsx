@@ -3,7 +3,7 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp 
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Chat, Message } from '../types';
-import { Search, Send, MapPin, User as UserIcon } from 'lucide-react';
+import { Search, Send, User as UserIcon, X, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -67,82 +67,108 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] flex bg-white overflow-hidden sm:rounded-[32px] sm:my-4 sm:shadow-2xl sm:border sm:border-gray-100">
+    <div className="max-w-5xl mx-auto h-[calc(100vh-100px)] flex bg-white overflow-hidden sm:rounded-[40px] sm:my-6 pro-shadow border border-gray-100">
       {/* Chat List */}
-      <div className={`w-full sm:w-80 flex-shrink-0 border-r border-gray-100 flex flex-col ${selectedChat ? 'hidden sm:flex' : 'flex'}`}>
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-4">Messages</h1>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className={`w-full sm:w-96 flex-shrink-0 border-r border-gray-50 flex flex-col bg-[#F8F9FA]/50 ${selectedChat ? 'hidden sm:flex' : 'flex'}`}>
+        <div className="p-8 pb-4">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900">Direct</h1>
+            <div className="w-10 h-10 bg-white rounded-xl pro-shadow border border-gray-100 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-indigo-600" />
+            </div>
+          </div>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-indigo-600 transition-colors" />
             <input 
               type="text" 
-              placeholder="Search friends..." 
-              className="w-full bg-gray-50 border-none rounded-xl pl-10 text-sm focus:ring-[#FF9933]/20"
+              placeholder="Search conversations..." 
+              className="w-full bg-white border border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-xs font-bold focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-100 pro-shadow placeholder:text-gray-200"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 space-y-1">
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-hide">
           {chats.length > 0 ? chats.map(chat => (
             <button
               key={chat.id}
               onClick={() => setSelectedChat(chat.id)}
-              className={`w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-gray-50 transition-all ${selectedChat === chat.id ? 'bg-gray-50' : ''}`}
+              className={`w-full flex items-center gap-4 p-5 rounded-[28px] transition-all group ${
+                selectedChat === chat.id 
+                ? 'bg-white pro-shadow border border-indigo-50 ring-4 ring-indigo-50/30' 
+                : 'hover:bg-white/60'
+              }`}
             >
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-gray-400" />
+              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center relative pro-shadow ring-2 ring-white">
+                <UserIcon className="w-7 h-7 text-gray-300" />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white shadow-sm" />
               </div>
               <div className="flex-1 text-left overflow-hidden">
-                <h4 className="font-bold text-gray-900 text-sm truncate">Chat with Friend</h4>
-                <p className="text-xs text-gray-400 truncate">{chat.lastMessage || 'Start a conversation'}</p>
+                <h4 className="font-black text-gray-900 text-[11px] uppercase tracking-widest truncate mb-0.5">Contact Node</h4>
+                <p className="text-[10px] font-bold text-gray-400 truncate leading-none uppercase italic">{chat.lastMessage || 'Initialize stream...'}</p>
               </div>
             </button>
           )) : (
-            <div className="text-center py-20 px-6">
-              <MessageCircle className="w-12 h-12 text-gray-100 mx-auto mb-4" />
-              <p className="text-gray-400 text-sm">No messages yet. Connect with locals to start chatting!</p>
+            <div className="text-center py-20 px-8">
+              <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center mx-auto mb-6 pro-shadow border border-dashed border-gray-200">
+                <MessageCircle className="w-8 h-8 text-gray-100" />
+              </div>
+              <p className="text-gray-900 font-black uppercase text-[10px] tracking-widest mb-2 italic">Encrypted Inbox</p>
+              <p className="text-gray-400 text-[9px] font-bold uppercase tracking-tight leading-relaxed">Secure peer-to-peer transmission layer is ready.</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className={`flex-1 flex flex-col ${!selectedChat ? 'hidden sm:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col bg-white ${!selectedChat ? 'hidden sm:flex' : 'flex'}`}>
         {selectedChat ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-gray-50 flex items-center gap-4 bg-white/80 backdrop-blur-md">
-              <button 
-                onClick={() => setSelectedChat(null)}
-                className="sm:hidden p-2 hover:bg-gray-100 rounded-full"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <UserIcon className="w-5 h-5 text-gray-400" />
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setSelectedChat(null)}
+                  className="sm:hidden p-3 bg-gray-50 rounded-2xl text-gray-400"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center pro-shadow ring-2 ring-white">
+                  <UserIcon className="w-6 h-6 text-gray-300" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest">Active Stream</h3>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">Secured</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-gray-900 text-sm">Friend Name</h3>
-                <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Online</span>
+              <div className="flex gap-2">
+                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
+                  <Search className="w-4 h-4" />
+                </div>
               </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-[#F8F9FA]/30 scrollbar-hide">
               <AnimatePresence initial={false}>
                 {messages.map((msg, i) => (
                   <motion.div
                     key={msg.id || i}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[75%] p-3 rounded-2xl text-sm ${
-                      msg.senderId === user?.uid 
-                      ? 'bg-[#FF9933] text-white rounded-tr-none' 
-                      : 'bg-white text-gray-800 rounded-tl-none shadow-sm'
+                    <div className={`max-w-[80%] px-6 py-4 rounded-[28px] pro-shadow relative
+                      ${msg.senderId === user?.uid 
+                      ? 'bg-gray-900 text-white rounded-tr-none border border-gray-800' 
+                      : 'bg-white text-gray-900 rounded-tl-none border border-gray-100'
                     }`}>
-                      {msg.content}
+                      <p className="text-sm font-medium leading-relaxed">{msg.content}</p>
+                      <div className={`mt-2 text-[8px] font-black uppercase tracking-tighter opacity-40 ${msg.senderId === user?.uid ? 'text-white' : 'text-gray-400'}`}>
+                        {msg.createdAt?.toDate ? formatDistanceToNow(msg.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -150,73 +176,37 @@ export default function ChatPage() {
             </div>
 
             {/* Input */}
-            <form onSubmit={sendMessage} className="p-4 bg-white border-t border-gray-50 flex gap-2">
-              <input 
-                type="text" 
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 bg-gray-50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-[#FF9933]/20"
-              />
-              <button 
-                type="submit"
-                disabled={!newMessage.trim()}
-                className="bg-[#138808] text-white p-3 rounded-2xl hover:bg-[#138808]/90 transition-all disabled:opacity-50"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </form>
+            <div className="p-8 bg-white border-t border-gray-50">
+              <form onSubmit={sendMessage} className="relative">
+                <input 
+                  type="text" 
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Inject data stream..."
+                  className="w-full bg-[#F8F9FA] border border-gray-50 rounded-[32px] pl-6 pr-20 py-5 text-sm font-bold focus:ring-4 focus:ring-black/5 focus:border-gray-200 focus:bg-white transition-all pro-shadow placeholder:text-gray-200"
+                />
+                <button 
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-14 h-14 bg-gray-900 text-white rounded-[24px] flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 pro-shadow"
+                >
+                  <Send className="w-5 h-5 translate-x-0.5" />
+                </button>
+              </form>
+            </div>
           </>
         ) : (
-          <div className="h-full flex items-center justify-center bg-gray-50/30">
+          <div className="h-full flex items-center justify-center bg-gray-50/10">
             <div className="text-center">
-              <div className="w-20 h-20 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-4">
-                 <MessageCircle className="w-10 h-10 text-gray-200" />
+              <div className="w-24 h-24 bg-white rounded-[40px] pro-shadow flex items-center justify-center mx-auto mb-8 border border-gray-50">
+                 <MessageCircle className="w-10 h-10 text-indigo-600/20" />
               </div>
-              <p className="text-gray-400 font-medium tracking-tight">Select a friend to start chatting</p>
+              <h4 className="text-lg font-black uppercase italic tracking-tighter text-gray-900 mb-2">Initialize Transport</h4>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-[200px] mx-auto leading-relaxed">Select a verification node to commence transmission</p>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function X(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
-
-function MessageCircle(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-    </svg>
   );
 }

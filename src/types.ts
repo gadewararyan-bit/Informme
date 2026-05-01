@@ -7,6 +7,8 @@ export interface User {
   bio?: string;
   postCount?: number;
   earnings?: number;
+  points?: number;
+  isAdmin?: boolean;
   location?: {
     lat: number;
     lng: number;
@@ -16,6 +18,13 @@ export interface User {
   fcmTokens?: string[];
   createdAt?: any;
   updatedAt?: any;
+  isPremium?: boolean;
+  subscriptionPlan?: 'basic' | 'pro' | 'enterprise';
+  subscriptionEndDate?: string;
+  walletBalance?: number;
+  engagementPoints?: number;
+  referralCode?: string;
+  referredBy?: string;
 }
 
 export interface Post {
@@ -62,6 +71,7 @@ export interface Comment {
   authorName: string;
   authorPhoto?: string;
   content: string;
+  likes: string[];
   createdAt: any;
 }
 

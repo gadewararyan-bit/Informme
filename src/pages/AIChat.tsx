@@ -4,6 +4,7 @@ import { chatWithAI } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 
 interface Message {
   role: 'user' | 'model';
@@ -13,25 +14,13 @@ interface Message {
 
 const AIChat: React.FC = () => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'model',
-      content: `### Welcome to AI Informer!
-I am your advanced Educational Assistant. My goal is to help you understand anything by breaking it down into simple, logical steps.
-
-**You can ask me:**
-*   "Explain how quantum computers work step-by-step"
-*   "How to cook a perfect Biryani?"
-*   "Steps to clear a Civil Service exam"
-*   "How does photosynthesis work?"
-
-How can I help you learn something new today?`,
-      timestamp: new Date()
-    }
-  ]);
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isPremium = user?.isPremium || false;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,7 +48,7 @@ How can I help you learn something new today?`,
       const chatHistory = messages.map(m => ({ role: m.role, content: m.content }));
       chatHistory.push({ role: 'user', content: userMessage.content });
 
-      const response = await chatWithAI(chatHistory, user?.language || 'en');
+      const response = await chatWithAI(chatHistory, user?.language || 'en', isPremium);
       
       const aiMessage: Message = {
         role: 'model',
@@ -69,60 +58,93 @@ How can I help you learn something new today?`,
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Core Logic failure:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-[100dvh] bg-gray-50 flex flex-col pb-20 overflow-hidden relative">
+    <div className="h-[100dvh] bg-[#F8F9FA] flex flex-col pb-20 overflow-hidden relative">
       {/* Header */}
-      <header className="bg-white border-b-4 border-black p-4 shrink-0 z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-purple-500 border-2 border-black rounded-xl brutalist-shadow">
-              <Bot className="w-4 h-4 text-white" />
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 p-6 shrink-0 z-10 pro-shadow">
+        <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 ${isPremium ? 'bg-indigo-600' : 'bg-gray-900'} text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-indigo-600/10`}>
+              <Bot className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tighter italic flex items-center gap-2">
-                AI Informer
-                <span className="text-[10px] bg-black text-white px-1.5 py-0.5 rounded not-italic tracking-normal">EDU</span>
-              </h1>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Aryan's AI • Step-by-Step</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Assistant</h1>
+                <span className={`text-[9px] font-black ${isPremium ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-100 text-gray-400 border-gray-200'} px-2 py-0.5 rounded-full tracking-widest uppercase border`}>
+                  {isPremium ? 'PRO NODE' : 'BASIC NODE'}
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                {isPremium ? 'High-Intelligence Neural Core' : 'Standard Community Intelligence'}
+              </p>
             </div>
           </div>
-          <div className="bg-purple-100 px-3 py-1 border-2 border-black rounded-full flex items-center gap-2">
-            <Sparkles className="w-3 h-3 text-purple-600" />
-            <span className="text-[10px] font-black uppercase text-purple-600">Smart</span>
+          
+          <div className="flex items-center gap-3">
+            {!isPremium && (
+              <button 
+                onClick={() => navigate('/pricing')}
+                className="hidden sm:flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+              >
+                <Sparkles className="w-3 h-3" />
+                Unlock Pro
+              </button>
+            )}
+            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">System Active</span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 max-w-4xl mx-auto w-full scrollbar-hide">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
+            <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">How can I assist?</h2>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Ask anything to begin session</p>
+          </div>
+        )}
         <AnimatePresence>
           {messages.map((message, index) => (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`flex gap-3 max-w-[85%] sm:max-w-[70%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center brutalist-shadow
-                  ${message.role === 'user' ? 'bg-blue-500' : 'bg-purple-500'}`}
+              <div className={`flex gap-4 max-w-[90%] sm:max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center pro-shadow transition-transform hover:scale-110
+                  ${message.role === 'user' ? 'bg-gray-900' : 'bg-indigo-600'}`}
                 >
-                  {message.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
+                  {message.role === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
                 </div>
-                <div className={`p-4 rounded-2xl border-4 border-black text-sm leading-relaxed brutalist-shadow
-                  ${message.role === 'user' ? 'bg-white font-bold' : 'bg-purple-50'}`}
+                <div className={`p-6 rounded-[32px] pro-shadow relative
+                  ${message.role === 'user' 
+                    ? 'bg-white text-gray-900 rounded-tr-none border border-gray-100' 
+                    : 'bg-white rounded-tl-none border border-indigo-100 ring-4 ring-indigo-50/30'}`}
                 >
-                  <div className="prose prose-sm max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-strong:text-purple-600">
+                  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:text-gray-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-strong:text-indigo-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded whitespace-pre-wrap">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
-                  <div className="mt-2 text-[8px] text-gray-400 uppercase font-black border-t-2 border-black/5 pt-2">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-3">
+                    <span className="text-[8px] text-gray-300 uppercase font-black tracking-widest">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {message.role === 'model' && (
+                      <div className="flex gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-200" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-100" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -136,12 +158,16 @@ How can I help you learn something new today?`,
             animate={{ opacity: 1 }}
             className="flex justify-start"
           >
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center bg-purple-500 brutalist-shadow">
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
+            <div className="flex gap-4 items-center">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center pro-shadow animate-pulse">
+                <Loader2 className="w-5 h-5 text-white animate-spin" />
               </div>
-              <div className="p-4 rounded-2xl border-4 border-black bg-purple-50 font-black text-[10px] uppercase tracking-widest brutalist-shadow animate-pulse">
-                Thinking...
+              <div className="bg-white px-6 py-4 rounded-full border border-indigo-100 pro-shadow">
+                <div className="flex gap-1">
+                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
+                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
+                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
+                </div>
               </div>
             </div>
           </motion.div>
@@ -150,47 +176,24 @@ How can I help you learn something new today?`,
       </div>
 
       {/* Input Area */}
-      <div className="sticky bottom-20 p-4 sm:p-6 bg-transparent w-full max-w-4xl mx-auto z-10">
-        <form onSubmit={handleSend} className="relative group">
+      <div className="sticky bottom-20 p-6 bg-transparent w-full max-w-4xl mx-auto z-10">
+        <form onSubmit={handleSend} className="relative">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            className="w-full bg-white border-4 border-black p-5 rounded-3xl font-bold text-sm pr-16 brutalist-shadow focus:outline-none focus:ring-0 placeholder:text-gray-400"
+            placeholder="Type your message..."
+            className="w-full bg-white border border-gray-100 p-6 rounded-[32px] font-bold text-sm pr-20 pro-shadow focus:outline-none focus:ring-4 focus:ring-indigo-600/5 placeholder:text-gray-200"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black text-white rounded-2xl border-2 border-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:grayscale"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-20 pro-shadow"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-5 h-5 translate-x-0.5" />
           </button>
         </form>
-        <div className="mt-3 flex justify-center gap-3 flex-wrap">
-          <button 
-            type="button"
-            onClick={() => setInput("Explain any science topic step-by-step")}
-            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
-          >
-            Science Steps
-          </button>
-          <button 
-            type="button"
-            onClick={() => setInput("Help me solve a math problem")}
-            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
-          >
-            Math Help
-          </button>
-          <button 
-            type="button"
-            onClick={() => setInput("How can I improve my English?")}
-            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white border-2 border-black px-3 py-1.5 rounded-full hover:bg-purple-100 active:translate-y-0.5 transition-all shadow-[3px_3px_0_0_rgba(0,0,0,1)]"
-          >
-            English Tips
-          </button>
-        </div>
       </div>
     </div>
   );

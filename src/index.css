@@ -5,25 +5,32 @@
   --font-display: "Space Grotesk", sans-serif;
   --color-saffron: #FF9933;
   --color-india-green: #138808;
+  --shadow-pro: 0 4px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-pro-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 8px 15px -6px rgba(0, 0, 0, 0.04);
 }
 
 @layer base {
   body {
-    @apply bg-[#FDFDFD] text-black antialiased selection:bg-saffron/20;
-  }
-  
-  h1, h2, h3 {
-    @apply font-black italic uppercase tracking-tighter;
+    @apply bg-[#FCFCFC] text-gray-900 antialiased selection:bg-orange-500/10;
   }
 }
 
 @layer utilities {
-  .brutalist-shadow {
-    box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  .pro-shadow {
+    box-shadow: var(--shadow-pro);
   }
   
-  .brutalist-shadow-green {
-    box-shadow: 8px 8px 0px 0px rgba(19, 136, 8, 0.3);
+  .pro-shadow-lg {
+    box-shadow: var(--shadow-pro-lg);
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20;
+    box-shadow: var(--shadow-pro);
+  }
+
+  .admin-line {
+    @apply border-b border-gray-100;
   }
 
   .pb-safe {

@@ -31,112 +31,130 @@ export default function Health() {
   }, [goal]);
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white border-b-4 border-black p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1 hover:bg-gray-100 rounded-full">
-            <ChevronLeft className="w-6 h-6" />
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 p-6 flex items-center justify-between pro-shadow">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2.5 bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all border border-gray-100">
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-black uppercase italic tracking-tighter">
-            Health & <span className="text-india-green">Fitness</span>
-          </h1>
+          <div>
+            <h1 className="text-xl font-black uppercase italic tracking-tighter text-gray-900">
+              Wellness <span className="text-emerald-600">Protocol</span>
+            </h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Bio-Metric Optimization</p>
+          </div>
         </div>
         <button 
           onClick={fetchAdvice}
           disabled={loading}
-          className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all disabled:opacity-50"
+          className="w-10 h-10 bg-white rounded-xl flex items-center justify-center pro-shadow border border-gray-100 text-gray-400 hover:text-indigo-600 transition-all disabled:opacity-50"
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="p-4 space-y-6 max-w-2xl mx-auto">
+      <div className="p-6 space-y-8 max-w-[500px] mx-auto">
         {/* Goal Selector */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           {(['loss', 'maintenance', 'gain'] as const).map((g) => (
             <button
               key={g}
               onClick={() => setGoal(g)}
-              className={`py-3 px-2 border-4 font-black uppercase text-[10px] sm:text-xs tracking-widest transition-all ${
+              className={`py-4 px-2 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all pro-shadow border ${
                 goal === g 
-                  ? 'bg-black text-white border-black shadow-[4px_4px_0_0_rgba(255,153,51,1)]' 
-                  : 'bg-white text-black border-black hover:bg-gray-50'
+                  ? 'bg-gray-900 text-white border-gray-900 ring-4 ring-black/5' 
+                  : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
               }`}
             >
-              {g === 'loss' ? 'Weight Loss' : g === 'gain' ? 'Weight Gain' : 'Stay Fit'}
+              {g === 'loss' ? 'Optimization' : g === 'gain' ? 'Ascension' : 'Homeostasis'}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-india-green" />
-            <p className="font-black uppercase tracking-widest text-xs animate-pulse">Generating your plan...</p>
+          <div className="flex flex-col items-center justify-center py-24 gap-6">
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center pro-shadow animate-pulse">
+               <Activity className="w-8 h-8 animate-spin-slow" />
+            </div>
+            <p className="font-black uppercase tracking-widest text-[10px] text-gray-400 animate-pulse">Synthesizing Bio-Plan...</p>
           </div>
         ) : data ? (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
             {/* Daily Tip */}
-            <div className="bg-saffron/10 border-4 border-black p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-saffron text-white px-3 py-1 font-black text-[10px] uppercase tracking-widest border-l-4 border-b-4 border-black">
-                Daily Tip
+            <div className="bg-white rounded-[32px] p-6 pro-shadow border border-gray-100 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 bg-amber-50 text-amber-600 px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-bl-3xl border-l border-b border-amber-100">
+                Primary Insight
               </div>
-              <div className="flex gap-4 items-start">
-                <Flame className="w-8 h-8 text-saffron shrink-0" />
-                <p className="text-lg font-bold leading-tight">{data.dailyTip}</p>
+              <div className="flex gap-5 items-start mt-4">
+                <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <Flame className="w-6 h-6" />
+                </div>
+                <p className="text-base font-bold leading-relaxed text-gray-900 pt-1">{data.dailyTip}</p>
               </div>
             </div>
 
             {/* Diet Section */}
-            <div className="border-4 border-black">
-              <div className="bg-black text-white p-2 flex items-center gap-2">
-                <Apple className="w-4 h-4" />
-                <span className="font-black uppercase tracking-widest text-xs">Diet & Nutrition</span>
+            <div className="bg-white rounded-[32px] overflow-hidden pro-shadow border border-gray-100">
+              <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Apple className="w-4 h-4 text-emerald-400" />
+                  <span className="font-black uppercase tracking-widest text-[10px]">Nutritional Protocol</span>
+                </div>
+                <TrendingUp className="w-4 h-4 text-white/40" />
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-6 space-y-4">
                 {data.dietAdvice.map((advice, i) => (
-                  <div key={i} className="flex gap-3 items-center">
-                    <div className="w-2 h-2 bg-india-green rounded-full shrink-0" />
-                    <p className="text-sm font-medium">{advice}</p>
+                  <div key={i} className="flex gap-4 items-center group">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full shrink-0 group-hover:scale-150 transition-transform" />
+                    <p className="text-sm font-bold text-gray-600">{advice}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Exercises Section */}
-            <div className="border-4 border-black">
-              <div className="bg-india-green text-white p-2 flex items-center gap-2">
-                <Dumbbell className="w-4 h-4" />
-                <span className="font-black uppercase tracking-widest text-xs">Recommended Routine</span>
+            <div className="bg-white rounded-[32px] overflow-hidden pro-shadow border border-gray-100">
+              <div className="bg-indigo-600 text-white px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="w-4 h-4 text-indigo-200" />
+                  <span className="font-black uppercase tracking-widest text-[10px]">Kinetical Workflow</span>
+                </div>
+                <Activity className="w-4 h-4 text-white/40" />
               </div>
-              <div className="divide-y-2 divide-gray-100">
+              <div className="divide-y border-t border-gray-50">
                 {data.exercises.map((ex, i) => (
-                  <div key={i} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-black uppercase text-sm tracking-tight">{ex.name}</h3>
-                      <span className="bg-black text-white px-2 py-0.5 text-[8px] font-bold rounded uppercase">{ex.sets}</span>
+                  <div key={i} className="p-6 hover:bg-gray-50/50 transition-colors flex items-center justify-between group">
+                    <div>
+                      <h3 className="font-black uppercase text-xs tracking-widest text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{ex.name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase italic">{ex.benefit}</p>
                     </div>
-                    <p className="text-xs text-gray-600 font-medium">{ex.benefit}</p>
+                    <span className="bg-indigo-50 text-indigo-600 px-3 py-1 text-[9px] font-black rounded-xl uppercase tracking-tighter border border-indigo-100">{ex.sets}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Motivation */}
-            <div className="bg-gray-50 border-4 border-black p-6 italic text-center relative">
-              <Quote className="w-10 h-10 text-gray-200 absolute top-2 left-2 -z-0" />
-              <p className="relative z-10 text-xl font-bold leading-tight text-gray-800">
+            <div className="bg-white rounded-[40px] p-8 text-center relative pro-shadow border border-gray-100 overflow-hidden">
+              <Quote className="w-16 h-16 text-gray-50 absolute -top-2 -left-2 -z-0 rotate-12" />
+              <p className="relative z-10 text-lg font-black italic leading-snug text-gray-900 tracking-tighter">
                 "{data.motivation}"
               </p>
+              <div className="mt-6 flex justify-center gap-1.5 opacity-20">
+                <div className="w-1 h-1 rounded-full bg-black" />
+                <div className="w-1 h-1 rounded-full bg-black" />
+                <div className="w-1 h-1 rounded-full bg-black" />
+              </div>
             </div>
           </motion.div>
         ) : (
-          <div className="text-center py-20 border-4 border-black border-dashed">
-            <p className="font-bold text-gray-500">Failed to load health advice. Try again.</p>
+          <div className="text-center py-20 bg-white rounded-[40px] pro-shadow border border-gray-100 border-dashed">
+            <p className="font-black uppercase text-[10px] text-gray-300 tracking-widest">Protocol Retrieval Failed</p>
           </div>
         )}
       </div>
