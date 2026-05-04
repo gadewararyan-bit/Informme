@@ -22,10 +22,10 @@ export default function PlatformPulse() {
 
   // Business metrics calculation
   const totalUsers = users.length;
-  const totalPendingRewards = users.reduce((acc, curr) => acc + (curr.earnings || 0), 0);
+  const totalPendingRewards = users.reduce((acc, curr) => acc + (curr.walletBalance || 0), 0);
   
   // Simulated Revenue (For Demonstration - Professional Scale)
-  const estimatedAdRevenue = users.reduce((acc, curr) => acc + ((curr.postCount || 0) * 1.5) + (totalUsers * 0.2), 0);
+  const estimatedAdRevenue = users.reduce((acc, curr) => acc + ((curr.postCount || 0) * 0.5) + (totalUsers * 0.1), 0);
   const platformProfit = estimatedAdRevenue - totalPendingRewards;
 
   useEffect(() => {
@@ -70,11 +70,11 @@ export default function PlatformPulse() {
       alert("Admin authorization required for payout processing.");
       return;
     }
-    if (!window.confirm(`Disburse payout of ₹${targetUser.earnings} to ${targetUser.displayName}?`)) return;
+    if (!window.confirm(`Disburse payout of ₹${(targetUser.walletBalance || 0).toFixed(2)} to ${targetUser.displayName}?`)) return;
 
     try {
       const userRef = doc(db, 'users', targetUser.uid);
-      await updateDoc(userRef, { earnings: 0 });
+      await updateDoc(userRef, { walletBalance: 0 });
     } catch (error) {
       console.error('Error processing payment:', error);
     }
@@ -189,18 +189,18 @@ export default function PlatformPulse() {
                 </div>
               </div>
 
-              {users.filter(u => (u.earnings || 0) > 0).length > 0 && (
+              {users.filter(u => (u.walletBalance || 0) > 0).length > 0 && (
                 <div className="bg-white p-6 rounded-[32px] pro-shadow border border-blue-100 bg-blue-50/10">
                   <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4">Payout Pipeline</h3>
                   <div className="space-y-3">
-                    {users.filter(u => (u.earnings || 0) > 0).map(u => (
+                    {users.filter(u => (u.walletBalance || 0) > 0).map(u => (
                       <div key={u.uid} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-blue-50">
                         <div>
                           <p className="text-xs font-bold text-gray-900">{u.displayName}</p>
                           <p className="text-[10px] text-gray-400 font-medium truncate max-w-[120px]">{u.email}</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-bold text-emerald-600">₹{u.earnings}</span>
+                          <span className="text-sm font-bold text-emerald-600">₹{(u.walletBalance || 0).toFixed(2)}</span>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handlePayUser(u); }}
                             className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase disabled:opacity-50"

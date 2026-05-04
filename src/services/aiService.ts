@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {
     return await fn();
   } catch (error: any) {
@@ -10,7 +10,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
     if (isRateLimit && retries > 0) {
       console.warn(`Gemini API throttled. Retrying in ${delay}ms... (${retries} attempts left)`);
       await new Promise(resolve => setTimeout(resolve, delay));
-      return withRetry(fn, retries - 1, delay * 2);
+      return withRetry(fn, retries - 1, delay * 1.5);
     }
     throw error;
   }
@@ -204,28 +204,103 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
   }
 }
 
-export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en', isPremium: boolean = false) {
+export async function chatWithAIStream(messages: { role: 'user' | 'model', content: string }[], onChunk: (text: string) => void, language: string = 'en', isPremium: boolean = false) {
   try {
-    const modelTier = isPremium ? "gemini-1.5-pro" : "gemini-3-flash-preview";
-    const systemInstruction = isPremium 
-      ? `You are "AI Pro Terminal", a highly advanced Artificial Intelligence core. 
-         You provide extremely detailed, deep, and creative responses. 
-         You are an expert tutor and problem solver.
+    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
+    let systemInstruction = isPremium 
+      ? `You are "AI Pro Terminal", a highly advanced Artificial Intelligence core powered by Gemini. 
+         You provide extremely detailed, deep, and creative responses with a professional and analytical tone. 
+         You are an expert tutor, problem solver, and guide for the InformMe community.
          
-         Structure:
-         1. **Deep Analysis**: Core understanding of the query.
-         2. **Advanced Breakdown**: Multi-step, nuanced exploration.
-         3. **Pro-Intelligence Insight**: A unique high-level perspective.
+         Structure your responses:
+         1. **Deep Analysis**: A high-level overview of the query.
+         2. **Advanced Breakdown**: NUANCED, multi-step exploration.
+         3. **Pro-Intelligence Insight**: A unique, expert perspective only an advanced AI can provide.
          
-         Translate everything to ${language}.`
-      : `You are "Basic Neural Node", an helpful community AI assistant. 
-         Provide clear, simple, and concise step-by-step educational answers.
+         Always respond in ${language}. Use professional markdown formatting.`
+      : `You are "Gemini Community Node", a helpful and intelligent community assistant for the InformMe app. 
+         Provide clear, accurate, and concise educational answers.
          
          Response Structure:
          1. **Short Summary**
-         2. **Steps**: Clear bullet points.
+         2. **Steps/Key Points**: Clear bullet points.
          
-         Use ${language}.`;
+         User Language: ${language}. If the query is simple, be very brief. If it's complex, be helpful but direct.`;
+
+    const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || "";
+    if (lastUserMsg.includes('english') || lastUserMsg.includes('learn') || lastUserMsg.includes('grammar') || lastUserMsg.includes('vocabulary')) {
+      systemInstruction += `\n\nEnglish Learning Context: You are also an expert English Language Coach. When the user asks about language:
+      1. Provide the CORRECT version of their sentence if applicable.
+      2. Explain the GRAMMAR RULE clearly.
+      3. Share VOCABULARY words and 2 usage examples.
+      Be encouraging and use simple vocabulary in your explanations.`;
+    }
+
+    const contents = messages.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model' as const,
+      parts: [{ text: msg.content }]
+    }));
+
+    const response = await ai.models.generateContentStream({
+      model: modelTier,
+      contents,
+      config: {
+        systemInstruction,
+        temperature: isPremium ? 0.9 : 0.7,
+      }
+    });
+
+    let fullText = "";
+    for await (const chunk of response) {
+      const text = chunk.text;
+      if (text) {
+        fullText += text;
+        onChunk(fullText);
+      }
+    }
+
+    return fullText;
+  } catch (error: any) {
+    if (error?.message?.includes('429')) {
+      throw new Error("I've reached my daily information limit for today. Please try again tomorrow morning!");
+    }
+    console.error('AI Chat Error:', error.message || error);
+    throw new Error("Something went wrong with the AI connection. Please try again later.");
+  }
+}
+
+export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en', isPremium: boolean = false) {
+  try {
+    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
+    let systemInstruction = isPremium 
+      ? `You are "AI Pro Terminal", a highly advanced Artificial Intelligence core powered by Gemini. 
+         You provide extremely detailed, deep, and creative responses with a professional and analytical tone. 
+         You are an expert tutor, problem solver, and guide for the InformMe community.
+         
+         Structure your responses:
+         1. **Deep Analysis**: A high-level overview of the query.
+         2. **Advanced Breakdown**: NUANCED, multi-step exploration.
+         3. **Pro-Intelligence Insight**: A unique, expert perspective only an advanced AI can provide.
+         
+         Always respond in ${language}. Use professional markdown formatting.`
+      : `You are "Gemini Community Node", a helpful and intelligent community assistant for the InformMe app. 
+         Provide clear, accurate, and concise educational answers.
+         
+         Response Structure:
+         1. **Short Summary**
+         2. **Steps/Key Points**: Clear bullet points.
+         
+         User Language: ${language}. If the query is simple, be very brief. If it's complex, be helpful but direct.`;
+
+    // Add specific English Learner context if the user is asking about language
+    const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || "";
+    if (lastUserMsg.includes('english') || lastUserMsg.includes('learn') || lastUserMsg.includes('grammar') || lastUserMsg.includes('vocabulary')) {
+      systemInstruction += `\n\nEnglish Learning Context: You are also an expert English Language Coach. When the user asks about language:
+      1. Provide the CORRECT version of their sentence if applicable.
+      2. Explain the GRAMMAR RULE clearly.
+      3. Share VOCABULARY words and 2 usage examples.
+      Be encouraging and use simple vocabulary in your explanations.`;
+    }
 
     const contents = messages.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model' as const,
@@ -234,10 +309,11 @@ export async function chatWithAI(messages: { role: 'user' | 'model', content: st
 
     const response = await withRetry(() => ai.models.generateContent({
       model: modelTier,
-      contents: [
-        { role: 'user', parts: [{ text: "Context: " + systemInstruction }] },
-        ...contents
-      ],
+      contents,
+      config: {
+        systemInstruction,
+        temperature: isPremium ? 0.9 : 0.7,
+      }
     }));
 
     return response.text || "I'm sorry, I couldn't generate a response.";

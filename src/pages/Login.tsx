@@ -82,7 +82,7 @@ export default function Login() {
             </div>
           </div>
           <div className="px-5 py-2 bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-full pro-shadow inline-block">
-            Pro Version v1.0.1
+            Live Version v1.0.1
           </div>
         </div>
 

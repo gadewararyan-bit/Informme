@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calendar, PlusSquare, Activity, User, MessageSquare } from 'lucide-react';
+import { Home, Calendar, PlusSquare, User, MessageSquare, BookOpen, Tag } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from '../../contexts/TranslationContext';
 
@@ -11,14 +11,14 @@ export default function BottomNav() {
   
   const navItems = user ? [
     { icon: Home, label: t('nav_feed'), path: '/' },
-    { icon: Calendar, label: t('nav_events'), path: '/events' },
+    { icon: Tag, label: 'Deals', path: '/deals' },
     { icon: User, label: t('nav_profile'), path: '/profile' },
     { icon: MessageSquare, label: 'Chat', path: '/ai-chat' },
     { icon: PlusSquare, label: t('nav_share'), path: '/add' },
   ] : [
     { icon: Home, label: t('nav_feed'), path: '/' },
+    { icon: Tag, label: 'Deals', path: '/deals' },
     { icon: Calendar, label: t('nav_events'), path: '/events' },
-    { icon: Activity, label: 'Pulse', path: '/pulse' },
     { icon: User, label: 'Login', path: '/login' },
   ];
 

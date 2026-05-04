@@ -99,11 +99,14 @@ export default function CreatePost() {
       if (user) {
         const userRef = doc(db, 'users', user.uid);
         const currentCount = (user.postCount || 0) + 1;
-        const currentEarnings = user.earnings || 0;
-        const reachedMilestone = currentCount % 100 === 0;
-        const newEarnings = reachedMilestone ? currentEarnings + 10 : currentEarnings;
+        const currentWallet = user.walletBalance || 0;
+        const reachedMilestone = currentCount > 0 && currentCount % 100 === 0;
+        const newWallet = reachedMilestone ? currentWallet + 10 : currentWallet;
         
-        await updateDoc(userRef, { postCount: currentCount, earnings: newEarnings });
+        await updateDoc(userRef, { 
+          postCount: currentCount, 
+          walletBalance: newWallet 
+        });
 
         if (reachedMilestone) {
           setShowMilestone(true);

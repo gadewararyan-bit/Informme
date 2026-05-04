@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Sparkles, HelpCircle } from 'lucide-react';
-import { chatWithAI } from '../services/aiService';
+import { chatWithAIStream } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'model';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 const AIChat: React.FC = () => {
@@ -41,24 +42,60 @@ const AIChat: React.FC = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput('');
     setIsLoading(true);
 
+    // Placeholder for AI streaming message
+    const aiPlaceholder: Message = {
+      role: 'model',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true
+    };
+    
+    setMessages(prev => [...prev, aiPlaceholder]);
+
     try {
-      const chatHistory = messages.map(m => ({ role: m.role, content: m.content }));
-      chatHistory.push({ role: 'user', content: userMessage.content });
+      const chatHistory = messages.filter(m => !m.isStreaming).map(m => ({ role: m.role, content: m.content }));
+      chatHistory.push({ role: 'user', content: currentInput });
 
-      const response = await chatWithAI(chatHistory, user?.language || 'en', isPremium);
+      await chatWithAIStream(
+        chatHistory,
+        (fullText) => {
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMsg = newMessages[newMessages.length - 1];
+            if (lastMsg && lastMsg.role === 'model') {
+              lastMsg.content = fullText;
+            }
+            return newMessages;
+          });
+          setIsLoading(false); // Stop loading pulse as soon as first chunk arrives
+        },
+        user?.language || 'en',
+        isPremium
+      );
       
-      const aiMessage: Message = {
-        role: 'model',
-        content: response,
-        timestamp: new Date()
-      };
+      // Mark streaming as finished
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg) lastMsg.isStreaming = false;
+        return newMessages;
+      });
 
-      setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('Core Logic failure:', error);
+    } catch (error: any) {
+      console.error('Chat Error:', error);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg && lastMsg.role === 'model') {
+          lastMsg.content = error.message || "Connection lost. Please try again.";
+          lastMsg.isStreaming = false;
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -70,32 +107,23 @@ const AIChat: React.FC = () => {
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 p-6 shrink-0 z-10 pro-shadow">
         <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 ${isPremium ? 'bg-indigo-600' : 'bg-gray-900'} text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-indigo-600/10`}>
+            <div className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-gray-900/10">
               <Bot className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Assistant</h1>
-                <span className={`text-[9px] font-black ${isPremium ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-100 text-gray-400 border-gray-200'} px-2 py-0.5 rounded-full tracking-widest uppercase border`}>
-                  {isPremium ? 'PRO NODE' : 'BASIC NODE'}
+                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Oracle</h1>
+                <span className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-full tracking-widest uppercase border text-[9px] font-black">
+                  GEMINI ACTIVE
                 </span>
               </div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                {isPremium ? 'High-Intelligence Neural Core' : 'Standard Community Intelligence'}
+                Powered by Gemini 3.1 Neural Core
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            {!isPremium && (
-              <button 
-                onClick={() => navigate('/pricing')}
-                className="hidden sm:flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
-              >
-                <Sparkles className="w-3 h-3" />
-                Unlock Pro
-              </button>
-            )}
             <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">System Active</span>

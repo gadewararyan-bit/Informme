@@ -95,13 +95,14 @@ export default function Profile() {
           </div>
 
           <div className="flex-1">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tighter uppercase italic">{user.displayName}</h1>
-            {user.isPremium && (
-              <div className="inline-flex items-center gap-1.5 bg-indigo-50 px-2 py-0.5 rounded-lg mb-1 mt-1 border border-indigo-100">
-                <Crown className="w-3 h-3 text-indigo-600" />
-                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{user.subscriptionPlan || 'PRO'} NODE</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-gray-900 tracking-tighter uppercase italic">{user.displayName}</h1>
+              {isAdmin && (
+                <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase mb-1">
+                  ADMIN
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 text-gray-400 mt-1">
               <MapPin className="w-3.5 h-3.5" />
               <span className="text-[11px] font-bold uppercase tracking-tight">{user.location?.areaName || "Local Node"}</span>
@@ -163,45 +164,34 @@ export default function Profile() {
            </button>
         </div>
 
-        {/* Monetization Card for Free Users */}
-        {!user.isPremium && !isAdmin && (
-          <div 
-            onClick={() => navigate('/pricing')}
-            className="bg-indigo-600 p-6 rounded-[32px] pro-shadow relative overflow-hidden group cursor-pointer mb-8"
-          >
-            <div className="relative z-10 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-white" />
-                 </div>
-                 <h2 className="text-sm font-black uppercase tracking-widest">Upgrade to Pro</h2>
-              </div>
-              <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest leading-relaxed mb-4">Unlock complete terminal access, AI intelligence, and exclusive local node networking.</p>
-              <div className="flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-widest group-hover:gap-4 transition-all">
-                Unlock Access <ArrowLeft className="w-3 h-3 rotate-180" />
-              </div>
+        {/* Admin Section (Always Visible for Admins) */}
+        {isAdmin && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Admin Control Panel</h3>
             </div>
-            <Crown className="absolute -bottom-6 -right-6 w-32 h-32 text-white/10 rotate-12 group-hover:rotate-45 transition-transform duration-700" />
+            <SeedingTool />
           </div>
         )}
 
         {/* Earning Card */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[32px] text-white pro-shadow relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[32px] text-white pro-shadow relative overflow-hidden mb-8">
            <div className="relative z-10">
               <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Engagement Node Balance</h3>
-                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">ACTIVE REW</span>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Community Earnings</h3>
+                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">ACTIVE NODE</span>
               </div>
               <div className="flex items-end gap-2 mb-4">
                  <p className="text-3xl font-black italic">₹{(user.walletBalance || 0).toFixed(2)}</p>
                  <p className="text-[10px] font-bold text-white/50 mb-1 uppercase tracking-widest">Available</p>
               </div>
               <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                 <div className="h-full bg-white rounded-full" style={{ width: `${((user.engagementPoints || 0) % 1000) / 10}%` }} />
+                 <div className="h-full bg-white rounded-full" style={{ width: `${((user.postCount || 0) % 100)}%` }} />
               </div>
               <div className="flex justify-between items-center mt-3">
                 <p className="text-[8px] font-black uppercase tracking-widest text-white/40">
-                   {1000 - ((user.engagementPoints || 0) % 1000)} views until next ₹10 milestone
+                   {100 - ((user.postCount || 0) % 100)} posts until next ₹10 reward
                 </p>
                 <button 
                   onClick={() => alert("Withdrawal request sent to admin terminal. You must have ₹500 to cash out.")}
@@ -273,16 +263,7 @@ export default function Profile() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4 pb-12"
             >
-              {isAdmin && (
-                <div className="mb-8">
-                   <div className="flex items-center gap-2 mb-4">
-                      <ShieldCheck className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Admin Privileges</h3>
-                   </div>
-                   <SeedingTool />
-                </div>
-              )}
-
+              {/* No more Admin section here, it is moved up */}
               <div 
                 onClick={() => navigate('/health')}
                 className="bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-emerald-100 transition-all"

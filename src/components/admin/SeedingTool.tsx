@@ -31,6 +31,19 @@ const NEWS_TEMPLATES = [
   "{city} Education Department announces scholarship program for talented local students."
 ];
 
+const ENGLISH_TEMPLATES = [
+  "ENGLISH TIP of the Day: The word '{word}' means {meaning}. Example: '{example}'",
+  "GRAMMAR HACK: Always remember to {rule}. It makes your English sound more natural!",
+  "PHRASE OF THE DAY: '{phrase}' is used when you want to {usage}."
+];
+
+const ENGLISH_WORDS = [
+  { word: "Abundant", meaning: "Existing in large quantities; plentiful", example: "There was abundant food at the party." },
+  { word: "Benevolent", meaning: "Well meaning and kindly", example: "The benevolent king was loved by all." },
+  { word: "Candid", meaning: "Truthful and straightforward; frank", example: "His candid interview shocked the fans." },
+  { word: "Diligent", meaning: "Having or showing care and conscientiousness in one's work", example: "She is a diligent student who always finishes her homework." }
+];
+
 const MARKET_TEMPLATES = [
   { item: 'Gold (24K)', price: '6250', unit: '1g' },
   { item: 'Petrol', price: '106.3', unit: 'Liter' },
@@ -79,17 +92,18 @@ export default function SeedingTool() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<string>('IDLE');
   const [progress, setProgress] = useState(0);
-  const [total, setTotal] = useState(500);
+  const [total, setTotal] = useState(100);
 
-  const seedData = async () => {
+  const seedData = async (count: number) => {
     if (!auth.currentUser) return;
+    setTotal(count);
     setStatus('SEEDING');
     setProgress(0);
 
     const postsToCreate = [];
     
-    // Generate 500 posts
-    for (let i = 0; i < total; i++) {
+    // Generate posts
+    for (let i = 0; i < count; i++) {
       const city = INDIAN_CITIES[Math.floor(Math.random() * INDIAN_CITIES.length)];
       const typeRoll = Math.random();
       
@@ -110,7 +124,7 @@ export default function SeedingTool() {
         likes: [],
         commentCount: 0,
         reports: [],
-        createdAt: Timestamp.fromDate(randomTime) // Use the staggered date
+        createdAt: Timestamp.fromDate(randomTime)
       };
 
       if (typeRoll < 0.4) {
@@ -126,11 +140,11 @@ export default function SeedingTool() {
           price: finalPrice,
           unit: market.unit
         };
-      } else if (typeRoll < 0.9) {
+      } else if (typeRoll < 0.8) {
         post.type = 'alert';
         post.content = ALERT_TEMPLATES[Math.floor(Math.random() * ALERT_TEMPLATES.length)].replace('{city}', city);
         post.isUrgent = Math.random() > 0.7;
-      } else {
+      } else if (typeRoll < 0.9) {
         post.type = 'event';
         const event = EVENT_TEMPLATES[Math.floor(Math.random() * EVENT_TEMPLATES.length)];
         post.content = `${event.title} in ${city}! Join us at ${event.venue} - ${event.time}. All community members welcome.`;
@@ -141,25 +155,26 @@ export default function SeedingTool() {
           venue: `${event.venue}, ${city}`,
           rsvps: []
         };
+      } else {
+        post.type = 'news';
+        const word = ENGLISH_WORDS[Math.floor(Math.random() * ENGLISH_WORDS.length)];
+        post.content = `[ENGLISH LAB] Word of the day: ${word.word}. \nMeaning: ${word.meaning}. \nUsage: "${word.example}"`;
       }
 
       postsToCreate.push(post);
     }
 
-    // Upload in chunks of 50 to avoid overwhelm and handle the 500 total
     const chunkSize = 50;
     try {
       for (let i = 0; i < postsToCreate.length; i += chunkSize) {
         const chunk = postsToCreate.slice(i, i + chunkSize);
-        // Batch upload
         await Promise.all(chunk.map(p => addDoc(collection(db, 'posts'), p)));
         setProgress(i + chunk.length);
       }
       
-      // Update user post count
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await updateDoc(userRef, {
-        postCount: increment(total)
+        postCount: increment(count)
       });
 
       setStatus('COMPLETED');
@@ -181,23 +196,31 @@ export default function SeedingTool() {
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-black uppercase tracking-tighter">{t('growth_seeder')}</h2>
-            <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Admin Authorization Required</p>
+            <h2 className="text-lg font-black uppercase tracking-tighter">Content Core</h2>
+            <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Network Simulation Tool</p>
           </div>
         </div>
 
         <p className="text-xs font-medium text-indigo-100 mb-8 leading-relaxed max-w-sm">
-          Injecting <span className="font-black text-white">{total}</span> authenticated data points across the Indian network nodes. 
-          This will populate news, market rates, alerts, and events globally.
+          Generate <span className="font-black text-white">100+</span> records to prime the local network nodes. 
+          Populate the news feed and market indicators instantly.
         </p>
 
         {status === 'IDLE' && (
-          <button 
-            onClick={seedData}
-            className="bg-white text-indigo-900 px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-          >
-            {t('execute_seeding')}
-          </button>
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={() => seedData(100)}
+              className="bg-white text-indigo-900 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              Sync 100 Posts
+            </button>
+            <button 
+              onClick={() => seedData(500)}
+              className="bg-indigo-700/50 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2 border border-indigo-500/30"
+            >
+              Sync 500 Nodes
+            </button>
+          </div>
         )}
 
         {status === 'SEEDING' && (
@@ -224,10 +247,17 @@ export default function SeedingTool() {
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             <div>
                <p className="text-xs font-black uppercase tracking-widest">Network Primed</p>
-               <p className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-tighter mt-0.5">{total} Nodes successfully integrated into the mainnet.</p>
+               <p className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-tighter mt-0.5">{progress} Posts successfully integrated into the mainnet.</p>
             </div>
+            <button 
+              onClick={() => setStatus('IDLE')}
+              className="ml-auto text-[10px] font-black uppercase underline"
+            >
+              Seed More
+            </button>
           </div>
         )}
+
 
         {status === 'ERROR' && (
           <div className="flex items-center gap-3 bg-red-500/20 p-4 rounded-2xl border border-red-500/30">

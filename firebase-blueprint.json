@@ -89,6 +89,33 @@
         "read": { "type": "boolean" }
       },
       "required": ["participants", "senderId", "content", "createdAt"]
+    },
+    "Deal": {
+      "title": "Local Deal",
+      "description": "Ongoing or time-limited offer from a local business",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "title": { "type": "string" },
+        "offer": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["food", "retail", "services", "other"] },
+        "businessName": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "areaName": { "type": "string" }
+          }
+        },
+        "validUntil": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "mediaUrl": { "type": "string" },
+        "savedBy": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["authorId", "title", "offer", "businessName", "validUntil", "createdAt"]
     }
   },
   "firestore": {
@@ -99,6 +126,10 @@
     "/posts/{postId}": {
       "schema": "Post",
       "description": "Public feed posts"
+    },
+    "/deals/{dealId}": {
+      "schema": "Deal",
+      "description": "Local business deals"
     },
     "/posts/{postId}/comments/{commentId}": {
       "schema": "Comment",

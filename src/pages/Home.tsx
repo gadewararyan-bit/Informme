@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import { Post } from '../types';
 import PostCard from '../components/feed/PostCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft } from 'lucide-react';
+import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles } from 'lucide-react';
 import { getLocalInfo } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ADMIN_EMAILS } from '../constants';
+import { motion, AnimatePresence } from 'motion/react';
+import { collection as fbCollection, query as fbQuery, orderBy as fbOrderBy, limit as fbLimit, onSnapshot as fbOnSnapshot } from 'firebase/firestore';
 
 export default function Home() {
   const { user } = useAuth();
@@ -17,6 +17,7 @@ export default function Home() {
   const navigate = useNavigate();
   const isAdmin = !!user?.isAdmin;
   const [posts, setPosts] = useState<Post[]>([]);
+  const [dealsCount, setDealsCount] = useState(0);
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [localData, setLocalData] = useState<any>(null);
@@ -24,9 +25,24 @@ export default function Home() {
   const [isChangingCity, setIsChangingCity] = useState(false);
   const [newCity, setNewCity] = useState('');
   const [selectedHeadline, setSelectedHeadline] = useState<any>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedSection, setSelectedSection] = useState<'news' | 'market' | 'safety' | 'deals' | null>(null);
 
   const commonCities = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Surat', 'Pune', 'Jaipur'];
+
+  const categoryPosts = {
+    news: posts.filter(p => !p.type || p.type === 'news'),
+    market: posts.filter(p => p.type === 'market'),
+    safety: posts.filter(p => p.type === 'alert'),
+    deals: dealsCount
+  };
+
+  const navigateToSection = (section: 'news' | 'market' | 'safety' | 'deals') => {
+    if (section === 'deals') {
+      navigate('/deals');
+    } else {
+      setSelectedSection(section);
+    }
+  };
 
   const handleCityChange = async (city: string) => {
     if (!user) return;
@@ -55,6 +71,18 @@ export default function Home() {
       }
     };
     fetchUserCount();
+
+    const fetchDealsCount = async () => {
+      try {
+        const { getCountFromServer } = await import('firebase/firestore');
+        const coll = collection(db, 'deals');
+        const snapshot = await getCountFromServer(coll);
+        setDealsCount(snapshot.data().count);
+      } catch (err) {
+        console.error("Error fetching deals count", err);
+      }
+    };
+    fetchDealsCount();
 
     const fetchLocalInfo = async () => {
       const areaName = user?.location?.areaName || 'Mumbai';
@@ -213,177 +241,202 @@ export default function Home() {
       </div>
     </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-12 md:px-10 grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
-        <div className="md:col-span-8 space-y-16">
-          {/* Headlines Section */}
-        <section>
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-1">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-                 <Newspaper className="w-7 h-7 text-blue-600" />
-                 Platform Headlines
-              </h2>
-              <p className="text-gray-400 text-sm font-medium">Verified local insights generated via AI nodes.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {loadingLocal && !localData ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-44 bg-white rounded-3xl animate-pulse pro-shadow" />
-              ))
-            ) : localData?.news && localData.news.length > 0 ? localData.news.slice(0, 4).map((item: any, i: number) => (
-              <motion.div 
-                key={i} 
-                className="bg-white p-6 rounded-3xl pro-shadow border border-gray-100 ring-1 ring-black/[0.02] hover:ring-blue-500/50 transition-all cursor-pointer group"
-                whileHover={{ y: -4 }}
-                onClick={() => setSelectedHeadline(item)}
-              >
-                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <h4 className="text-sm font-bold text-gray-900 leading-tight mb-2 line-clamp-2">{item.title}</h4>
-                <p className="text-[11px] font-medium text-gray-400 leading-relaxed line-clamp-3">{item.summary}</p>
-              </motion.div>
-            )) : (
-              <div className="col-span-full py-16 bg-white rounded-[40px] border border-dashed border-gray-200 text-center flex flex-col items-center justify-center pro-shadow">
-                <Newspaper className="w-12 h-12 text-gray-100 mb-4" />
-                <p className="text-sm font-bold text-gray-300 uppercase tracking-widest leading-relaxed">No local headlines currently indexed for this area.</p>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 md:px-10 space-y-12">
+        {/* Interactive Sections Grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* News Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigateToSection('news')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <Newspaper className="w-7 h-7" />
               </div>
-            )}
-          </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Local News</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{categoryPosts.news.length} Reports Online</p>
+            </div>
+            <Activity className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* Market Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigateToSection('market')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-600 group-hover:text-white transition-all">
+                <IndianRupee className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Market Watch</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{categoryPosts.market.length} Prices Indexed</p>
+            </div>
+            <Tag className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* Safety Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigateToSection('safety')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                <ShieldAlert className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Safety & Alerts</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{categoryPosts.safety.length} Critical Alerts</p>
+            </div>
+            <Activity className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* Deals Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigateToSection('deals')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                <ShoppingBag className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Local Deals</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{categoryPosts.deals} Offers Live</p>
+            </div>
+            <Tag className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
         </section>
 
-        {/* Market Rates Section */}
-        <section>
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-1">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-                 <Tag className="w-7 h-7 text-orange-500" />
-                 Market Hub
-              </h2>
-              <p className="text-gray-400 text-sm font-medium">Real-time commodity valuation from local operators.</p>
-            </div>
-          </div>
-          
-          <div className="flex overflow-x-auto gap-6 pb-6 snap-x no-scrollbar">
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="w-64 h-36 bg-white rounded-3xl animate-pulse pro-shadow shrink-0" />
-              ))
-            ) : posts.filter(p => p.type === 'market' && p.priceData).slice(0, 10).map((post) => (
-              <motion.div 
-                key={post.id} 
-                className="w-64 shrink-0 bg-white p-6 rounded-3xl pro-shadow border border-gray-100 snap-start active:scale-95 transition-transform cursor-pointer"
-                whileHover={{ y: -4 }}
-                onClick={() => navigate(`/post/${post.id}`)}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h4 className="font-bold text-sm text-gray-900 uppercase tracking-tight truncate flex-1">{post.priceData?.item}</h4>
-                  <div className="p-1.5 bg-orange-50 rounded-lg">
-                    <Tag className="w-3.5 h-3.5 text-orange-500" />
-                  </div>
+        {/* Dynamic Detail Panel (The One Frame Concept) */}
+        <AnimatePresence>
+          {selectedSection && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white rounded-[48px] pro-shadow border border-gray-100 overflow-hidden relative"
+            >
+              <div className="p-10">
+                <div className="flex items-center justify-between mb-12">
+                   <div className="flex items-center gap-4">
+                      {selectedSection === 'news' && <Newspaper className="w-8 h-8 text-blue-600" />}
+                      {selectedSection === 'market' && <IndianRupee className="w-8 h-8 text-orange-600" />}
+                      {selectedSection === 'safety' && <ShieldAlert className="w-8 h-8 text-rose-600" />}
+                      <div>
+                         <h2 className="text-4xl font-black italic tracking-tighter uppercase">
+                            {selectedSection === 'news' ? 'Local News Bureau' : selectedSection === 'market' ? 'Local Commodity Index' : 'Emergency & Local Alerts'}
+                         </h2>
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Deep Intelligence for {user?.location?.areaName || 'Your Vicinity'}</p>
+                      </div>
+                   </div>
+                   <button 
+                    onClick={() => setSelectedSection(null)}
+                    className="p-4 bg-gray-50 rounded-[20px] text-gray-400 hover:text-gray-900 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
                 </div>
-                <div className="flex items-baseline gap-1 mt-auto">
-                   <span className="text-2xl font-bold text-gray-900">₹{post.priceData?.price}</span>
-                   <span className="text-[10px] font-bold text-gray-400 uppercase">per {post.priceData?.unit}</span>
-                </div>
-                <p className="text-[10px] font-bold text-gray-400 mt-2 truncate uppercase">{post.authorName}</p>
-              </motion.div>
-            ))}
-            {posts.filter(p => p.type === 'market').length === 0 && !loading && (
-              <div className="w-full bg-white border border-dashed border-gray-200 p-12 rounded-[40px] text-center pro-shadow">
-                 <p className="text-xs font-bold text-gray-300 uppercase tracking-widest">Market Feed: Standing By</p>
-              </div>
-            )}
-          </div>
-        </section>
 
-        {/* Global Feed */}
-        <section className="bg-white rounded-[40px] p-6 md:p-10 pro-shadow border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {selectedSection && selectedSection !== 'deals' && (categoryPosts[selectedSection] as Post[]).length > 0 ? (
+                    (categoryPosts[selectedSection] as Post[]).slice(0, 50).map((post) => (
+                      <div 
+                        key={post.id}
+                        onClick={() => navigate(`/post/${post.id}`)}
+                        className="bg-gray-50 p-6 rounded-[32px] hover:bg-white border border-transparent hover:border-gray-100 hover:pro-shadow transition-all cursor-pointer group"
+                      >
+                         <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{post.authorName}</span>
+                            <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-gray-900 transition-colors" />
+                         </div>
+                         <h4 className="font-bold text-gray-900 mb-3 leading-snug line-clamp-2">{post.content}</h4>
+                         {post.priceData && (
+                            <div className="mt-auto flex items-baseline gap-1">
+                               <span className="text-xl font-black text-gray-900">₹{post.priceData.price}</span>
+                               <span className="text-[9px] font-black text-gray-400 uppercase">/ {post.priceData.unit}</span>
+                            </div>
+                         )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-20 text-center">
+                       <p className="text-[11px] font-black text-gray-300 uppercase tracking-[0.3em]">No primary data nodes found in this sector.</p>
+                       {isAdmin && (
+                         <div className="mt-6 p-12 border-2 border-dashed border-gray-200 rounded-[40px] max-w-md mx-auto">
+                            <p className="text-xs font-bold text-gray-400 mb-6 italic">Developer Tip: Go to Profile &rarr; Admin Privileges to seed 500 sample posts instantly.</p>
+                            <button 
+                              onClick={() => navigate('/profile')}
+                              className="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all pro-shadow"
+                            >
+                              Sync 500 Posts Now
+                            </button>
+                         </div>
+                       )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Regular Global Feed Below */}
+        <section className="pt-12 border-t border-gray-100">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-black italic tracking-tighter text-gray-900">COMMUNITY INTEL</h2>
-            <div className="flex p-1 bg-gray-50 rounded-2xl gap-1">
-               <button className="px-5 py-2 bg-white rounded-xl text-xs font-bold text-blue-600 pro-shadow">RECENT</button>
-               <button className="px-5 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">TOP</button>
+            <h2 className="text-3xl font-black italic tracking-tighter text-gray-900 uppercase">Latest Feed</h2>
+            <div className="flex p-1 bg-gray-100 rounded-2xl gap-1">
+               <button className="px-5 py-2 bg-white rounded-xl text-xs font-bold text-blue-600 pro-shadow">LIVE</button>
+               <button onClick={() => navigate('/pulse')} className="px-5 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase">Network Pulse</button>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="w-full h-44 bg-gray-50 animate-pulse rounded-3xl" />
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-64 bg-white rounded-[40px] animate-pulse pro-shadow" />
               ))
             ) : posts.length > 0 ? (
-              posts.map(post => <PostCard key={post.id} post={post} compact />)
+              posts.slice(0, 100).map((post, index) => (
+                <div key={post.id} className="contents">
+                  <PostCard post={post} />
+                  {index === 2 && (
+                    <div className="bg-gradient-to-br from-gray-900 to-indigo-900 p-8 rounded-[40px] text-white pro-shadow relative overflow-hidden group">
+                       <div className="relative z-10">
+                          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2 block">SPONSORED NODE</span>
+                          <h4 className="text-xl font-black italic tracking-tighter uppercase mb-2">Partner with InformMe</h4>
+                          <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-relaxed mb-4">Promote your local business to 500+ active users in this sector.</p>
+                          <button className="text-[10px] font-black uppercase tracking-widest bg-white text-gray-900 px-6 py-2.5 rounded-xl hover:scale-105 transition-all">Contact Sales</button>
+                       </div>
+                       <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12 group-hover:rotate-45 transition-transform" />
+                    </div>
+                  )}
+                </div>
+              ))
             ) : (
-              <div className="text-center py-20">
-                <Info className="w-12 h-12 text-gray-100 mx-auto mb-4" />
-                <p className="text-gray-300 font-bold uppercase tracking-widest">Awaiting primary data streams...</p>
+              <div className="col-span-full py-20 px-6 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100">
+                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 pro-shadow">
+                  <Activity className="w-10 h-10 text-indigo-400" />
+                </div>
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900 mb-2">Network Idle</h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No primary data nodes found in this sector. Propagation will begin once users interact with the local node.</p>
+                
+                {isAdmin && (
+                  <div className="mt-8 pt-8 border-t border-gray-100 max-w-sm mx-auto">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4 italic">Creator Protocol: Initialize with 100+ simulated nodes.</p>
+                    <button 
+                      onClick={() => navigate('/profile')}
+                      className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition-all pro-shadow flex items-center gap-2 mx-auto"
+                    >
+                      Sync 100 Posts Now
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </section>
-        </div>
-
-        {/* Right Sidebar - AI Tooling */}
-        <aside className="md:col-span-4 space-y-8 sticky top-8">
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">{t('ai_tooling')}</h3>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/health')}
-              className="w-full bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-emerald-100 transition-all text-left"
-            >
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                     <Activity className="w-6 h-6" />
-                  </div>
-                  <div>
-                     <h4 className="text-sm font-bold text-gray-900 leading-none">{t('diagnostic_insights')}</h4>
-                     <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">AI Health & Wellness</p>
-                  </div>
-               </div>
-               <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 group-hover:text-emerald-500 group-hover:bg-emerald-50 transition-all">
-                  <ArrowLeft className="w-4 h-4 rotate-180" />
-               </div>
-            </motion.button>
-
-            <motion.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/ai-chat')}
-              className="w-full bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-purple-100 transition-all text-left"
-            >
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                     <MessageSquare className="w-6 h-6" />
-                  </div>
-                  <div>
-                     <h4 className="text-sm font-bold text-gray-900 leading-none">{t('ai_intelligence')}</h4>
-                     <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">Smart Agent Guide</p>
-                  </div>
-               </div>
-               <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 group-hover:text-purple-500 group-hover:bg-purple-50 transition-all">
-                  <ArrowLeft className="w-4 h-4 rotate-180" />
-               </div>
-            </motion.button>
-          </div>
-
-          <div className="bg-gray-900 p-8 rounded-[40px] text-white pro-shadow relative overflow-hidden">
-            <div className="relative z-10">
-              <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Network Status</h4>
-              <p className="text-2xl font-black italic tracking-tighter mb-4">SYSTEM NOMINAL</p>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Nodes Active: {userCount}</span>
-              </div>
-            </div>
-            <Activity className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12" />
-          </div>
-        </aside>
       </main>
     </div>
   );

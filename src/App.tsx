@@ -18,6 +18,9 @@ import Events from './pages/Events';
 import Health from './pages/Health';
 import OwnerPortal from './pages/OwnerPortal';
 import AIChat from './pages/AIChat';
+import EnglishLab from './pages/EnglishLab';
+import LocalDeals from './pages/LocalDeals';
+import PostDeal from './pages/PostDeal';
 import Pricing from './pages/Pricing';
 import NotificationSystem from './components/NotificationSystem';
 import AdminFooter from './components/layout/AdminFooter';
@@ -74,6 +77,9 @@ function AppContent() {
         <Route path="/post/:id" element={<PostDetails />} />
         <Route path="/health" element={user ? <Health /> : <Navigate to="/login" />} />
         <Route path="/ai-chat" element={user ? <AIChat /> : <Navigate to="/login" />} />
+        <Route path="/learn" element={user ? <EnglishLab /> : <Navigate to="/login" />} />
+        <Route path="/deals" element={user ? <LocalDeals /> : <Navigate to="/login" />} />
+        <Route path="/post-deal" element={user ? <PostDeal /> : <Navigate to="/login" />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

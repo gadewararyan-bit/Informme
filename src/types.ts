@@ -90,3 +90,23 @@ export interface Message {
   createdAt: any;
   read: boolean;
 }
+
+export interface Deal {
+  id: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  offer: string;
+  description?: string;
+  category: 'food' | 'retail' | 'services' | 'other';
+  businessName: string;
+  location: {
+    lat: number;
+    lng: number;
+    areaName: string;
+  };
+  validUntil: any;
+  createdAt: any;
+  mediaUrl?: string;
+  savedBy: string[];
+}

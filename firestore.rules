@@ -66,6 +66,22 @@ service cloud.firestore {
         && data.createdAt == request.time;
     }
 
+    function isValidDeal(data) {
+      return data.authorId == request.auth.uid
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.offer is string && data.offer.size() > 0 && data.offer.size() <= 200
+        && data.businessName is string && data.businessName.size() > 0 && data.businessName.size() <= 100
+        && (!('description' in data) || data.description is string && data.description.size() <= 2000)
+        && data.category in ['food', 'retail', 'services', 'other']
+        && (!('mediaUrl' in data) || data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 1000))
+        && (!('location' in data) || (
+             data.location.areaName is string
+           ))
+        && data.validUntil is timestamp
+        && data.createdAt == request.time
+        && (!('savedBy' in data) || data.savedBy is list);
+    }
+
     // --- Collection Routes ---
 
     match /users/{userId} {
@@ -109,6 +125,19 @@ service cloud.firestore {
         allow create: if isVerified() && isValidMessage(incoming()) 
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
+    }
+
+    match /deals/{dealId} {
+      allow read: if true;
+      allow create: if isVerified() && isValidDeal(incoming());
+      allow update: if isVerified() && (
+        (isOwner(existing().authorId) && isValidDeal(incoming())) ||
+        (!isOwner(existing().authorId) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['savedBy']) &&
+         incoming().authorId == existing().authorId &&
+         incoming().title == existing().title)
+      );
+      allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
     }
   }
 }

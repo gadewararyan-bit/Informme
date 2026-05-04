@@ -206,9 +206,9 @@ export default function OwnerPortal() {
                          </td>
                          <td className="px-8 py-6 text-xs text-gray-500 font-medium">{u.email}</td>
                          <td className="px-8 py-6 font-bold text-indigo-600">{(u.engagementPoints || 0) + (u.points || 0)}</td>
-                         <td className="px-8 py-6 font-bold text-emerald-600">₹{((u.walletBalance || 0) + (u.earnings || 0)).toFixed(2)}</td>
+                         <td className="px-8 py-6 font-bold text-emerald-600">₹{(u.walletBalance || 0).toFixed(2)}</td>
                          <td className="px-8 py-6">
-                            {((u.walletBalance || 0) + (u.earnings || 0)) > 0 && (
+                            {(u.walletBalance || 0) > 0 && (
                               <button 
                                 onClick={() => handlePayUser(u)}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
