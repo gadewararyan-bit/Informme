@@ -105,7 +105,7 @@ export default function Profile() {
             </div>
             <div className="flex items-center gap-1.5 text-gray-400 mt-1">
               <MapPin className="w-3.5 h-3.5" />
-              <span className="text-[11px] font-bold uppercase tracking-tight">{user.location?.areaName || "Local Node"}</span>
+              <span className="text-[11px] font-bold uppercase tracking-tight">{user.location?.areaName || "Your Location"}</span>
             </div>
             
               <div className="flex gap-4 mt-6">
@@ -129,24 +129,6 @@ export default function Profile() {
            </p>
         </div>
 
-        {/* Referral Section */}
-        <div className="bg-emerald-50 p-6 rounded-[32px] border border-emerald-100 mb-8 flex items-center justify-between">
-           <div>
-              <h3 className="text-[10px] font-black uppercase text-emerald-700 tracking-widest mb-1">Refer & Earn ₹50</h3>
-              <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Share your core identification code</p>
-           </div>
-           <button 
-             onClick={() => {
-               const code = user.uid.slice(0, 6).toUpperCase();
-               navigator.clipboard.writeText(code);
-               alert(`Code ${code} copied! Share with friends to earn.`);
-             }}
-             className="bg-white text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase pro-shadow active:scale-95 transition-all"
-           >
-             Copy Code
-           </button>
-        </div>
-
         {/* Action Grid */}
         <div className="grid grid-cols-2 gap-3 mb-8">
            <button 
@@ -164,12 +146,12 @@ export default function Profile() {
            </button>
         </div>
 
-        {/* Admin Section (Always Visible for Admins) */}
-        {isAdmin && (
+        {/* Manage App Section (Always Visible for Admins) */}
+        {user?.isAdmin && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Admin Control Panel</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Manage App</h3>
             </div>
             <SeedingTool />
           </div>
@@ -179,8 +161,8 @@ export default function Profile() {
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[32px] text-white pro-shadow relative overflow-hidden mb-8">
            <div className="relative z-10">
               <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Community Earnings</h3>
-                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">ACTIVE NODE</span>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Your Earnings</h3>
+                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">CONNECTED</span>
               </div>
               <div className="flex items-end gap-2 mb-4">
                  <p className="text-3xl font-black italic">₹{(user.walletBalance || 0).toFixed(2)}</p>
@@ -190,15 +172,15 @@ export default function Profile() {
                  <div className="h-full bg-white rounded-full" style={{ width: `${((user.postCount || 0) % 100)}%` }} />
               </div>
               <div className="flex justify-between items-center mt-3">
-                <p className="text-[8px] font-black uppercase tracking-widest text-white/40">
-                   {100 - ((user.postCount || 0) % 100)} posts until next ₹10 reward
-                </p>
-                <button 
-                  onClick={() => alert("Withdrawal request sent to admin terminal. You must have ₹500 to cash out.")}
-                  className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all"
-                >
-                  Withdraw
-                </button>
+                 <p className="text-[8px] font-black uppercase tracking-widest text-white/40">
+                    {100 - ((user.postCount || 0) % 100)} posts until next ₹10 reward
+                 </p>
+                 <button 
+                   onClick={() => alert("Withdrawal request sent. You need at least ₹500 to cash out.")}
+                   className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all"
+                 >
+                   Withdraw
+                 </button>
               </div>
            </div>
            <Activity className="absolute -bottom-6 -right-6 w-32 h-32 text-white/5 rotate-12" />
@@ -251,7 +233,7 @@ export default function Profile() {
               ) : (
                 <div className="py-20 text-center">
                    <Grid className="w-12 h-12 text-gray-100 mx-auto mb-4" />
-                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No transmissions active</p>
+                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No posts yet</p>
                 </div>
               )}
             </motion.div>
@@ -274,7 +256,7 @@ export default function Profile() {
                     </div>
                     <div>
                        <h4 className="text-sm font-bold text-gray-900 leading-none">{t('diagnostic_insights')}</h4>
-                       <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">AI Health & Wellness Engine</p>
+                       <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">Healthy Living Tips</p>
                     </div>
                  </div>
                  <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 group-hover:text-emerald-500 group-hover:bg-emerald-50 transition-all">
@@ -292,7 +274,7 @@ export default function Profile() {
                     </div>
                     <div>
                        <h4 className="text-sm font-bold text-gray-900 leading-none">{t('ai_intelligence')}</h4>
-                       <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">Smart Agent & Guide</p>
+                       <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase">AI Assistant & Guide</p>
                     </div>
                  </div>
                  <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 group-hover:text-purple-500 group-hover:bg-purple-50 transition-all">

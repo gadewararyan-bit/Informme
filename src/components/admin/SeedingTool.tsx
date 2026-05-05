@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { db, auth } from '../../services/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, Timestamp, getDoc } from 'firebase/firestore';
 import { Loader2, Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const INDIAN_CITIES = [
   'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Surat', 'Pune', 'Jaipur',
@@ -88,11 +89,127 @@ const EVENT_TEMPLATES = [
   { title: "Chess Tournament", venue: "Youth Club", time: "9 AM onwards" }
 ];
 
+const DEAL_TEMPLATES = [
+  { title: "Buy 1 Get 1 Free on Burgers", shop: "Food Hub", discount: "BOGO" },
+  { title: "Flat 20% off on all Grocery", shop: "Super Mart", discount: "20% OFF" },
+  { title: "Summer Sale: 50% discount on clothing", shop: "Fashion Point", discount: "50% OFF" },
+  { title: "Free Coffee with any Breakfast", shop: "The Cafe", discount: "FREEBIE" },
+  { title: "10% off for Students", shop: "Book World", discount: "10% OFF" },
+  { title: "Weekend Special: Flat ₹100 off", shop: "Pizza Paradise", discount: "₹100 OFF" },
+  { title: "Mega Electronics Sale", shop: "Digital Zone", discount: "UP TO 40%" },
+  { title: "Happy Hours: 25% off on beverages", shop: "Lounge Bar", discount: "25% OFF" },
+  { title: "Get free home delivery on orders above ₹200", shop: "Daily Needs", discount: "FREE DELIVERY" },
+  { title: "Refer a friend and get ₹50 coupon", shop: "Services App", discount: "₹50 REWARD" }
+];
+
 export default function SeedingTool() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [status, setStatus] = useState<string>('IDLE');
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(100);
+
+  const seedDataForCurrentArea = async () => {
+    if (!auth.currentUser || !user?.location?.areaName) return;
+    const city = user.location.areaName;
+    const categories = ['news', 'market', 'alert', 'deal'];
+    const countPerCategory = 10;
+    const totalToCreate = categories.length * countPerCategory;
+    
+    setTotal(totalToCreate);
+    setStatus('SEEDING');
+    setProgress(0);
+
+    const postsToCreate = [];
+
+    categories.forEach(cat => {
+      for (let i = 0; i < countPerCategory; i++) {
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const randomTime = new Date(thirtyDaysAgo + Math.random() * (Date.now() - thirtyDaysAgo));
+        
+        if (cat !== 'deal') {
+          let post: any = {
+            authorId: auth.currentUser!.uid,
+            authorName: auth.currentUser!.displayName || 'System Admin',
+            authorPhoto: auth.currentUser!.photoURL || '',
+            language: user.language || 'en',
+            location: {
+              areaName: city,
+              pinCode: user.location?.pinCode || '400001',
+              coordinates: {
+                lat: user.location?.lat || 18.9226,
+                lng: user.location?.lng || 72.8333
+              }
+            },
+            areaName: city,
+            likes: [],
+            commentCount: 0,
+            reports: [],
+            createdAt: Timestamp.fromDate(randomTime)
+          };
+
+          if (cat === 'news') {
+            post.type = 'news';
+            post.content = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)].replace('{city}', city);
+          } else if (cat === 'market') {
+            post.type = 'market';
+            const market = MARKET_TEMPLATES[Math.floor(Math.random() * MARKET_TEMPLATES.length)];
+            const finalPrice = (parseFloat(market.price) * (0.95 + Math.random() * 0.1)).toFixed(2);
+            post.content = `[PRICE UPDATE] ${market.item} in ${city}: ₹${finalPrice} / ${market.unit}.`;
+            post.priceData = {
+              item: market.item,
+              price: finalPrice,
+              unit: market.unit
+            };
+          } else if (cat === 'alert') {
+            post.type = 'alert';
+            post.content = ALERT_TEMPLATES[Math.floor(Math.random() * ALERT_TEMPLATES.length)].replace('{city}', city);
+            post.isUrgent = Math.random() > 0.5;
+          }
+          postsToCreate.push({ collection: 'posts', data: post });
+        } else {
+          const deal = DEAL_TEMPLATES[Math.floor(Math.random() * DEAL_TEMPLATES.length)];
+          const dealData: any = {
+            authorId: auth.currentUser!.uid,
+            authorName: auth.currentUser!.displayName || 'System Admin',
+            title: deal.title,
+            offer: deal.discount,
+            description: `${deal.title} is now active at ${deal.shop}. Exclusive community discount available!`,
+            category: ['food', 'retail', 'services'][Math.floor(Math.random() * 3)],
+            businessName: deal.shop,
+            location: {
+              lat: user?.location?.lat || 18.9226,
+              lng: user?.location?.lng || 72.8333,
+              areaName: city
+            },
+            validUntil: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+            createdAt: Timestamp.fromDate(randomTime),
+            savedBy: []
+          };
+          postsToCreate.push({ collection: 'deals', data: dealData });
+        }
+      }
+    });
+
+    const chunkSize = 20;
+    try {
+      for (let i = 0; i < postsToCreate.length; i += chunkSize) {
+        const chunk = postsToCreate.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(p => addDoc(collection(db, p.collection), p.data)));
+        setProgress(i + chunk.length);
+      }
+      
+      const userRef = doc(db, 'users', auth.currentUser!.uid);
+      await updateDoc(userRef, {
+        postCount: increment(totalToCreate)
+      });
+
+      setStatus('COMPLETED');
+    } catch (err) {
+      console.error("Seeding error:", err);
+      setStatus('ERROR');
+    }
+  };
 
   const seedData = async (count: number) => {
     if (!auth.currentUser) return;
@@ -209,16 +326,16 @@ export default function SeedingTool() {
         {status === 'IDLE' && (
           <div className="flex flex-wrap gap-4">
             <button 
+              onClick={() => seedDataForCurrentArea()}
+              className="bg-emerald-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 pro-shadow"
+            >
+              Seed 10 Posts per Section
+            </button>
+            <button 
               onClick={() => seedData(100)}
               className="bg-white text-indigo-900 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
-              Sync 100 Posts
-            </button>
-            <button 
-              onClick={() => seedData(500)}
-              className="bg-indigo-700/50 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2 border border-indigo-500/30"
-            >
-              Sync 500 Nodes
+              Sync 100 Random Posts
             </button>
           </div>
         )}

@@ -21,6 +21,7 @@ import AIChat from './pages/AIChat';
 import EnglishLab from './pages/EnglishLab';
 import LocalDeals from './pages/LocalDeals';
 import PostDeal from './pages/PostDeal';
+import SectionView from './pages/SectionView';
 import Pricing from './pages/Pricing';
 import NotificationSystem from './components/NotificationSystem';
 import AdminFooter from './components/layout/AdminFooter';
@@ -80,13 +81,14 @@ function AppContent() {
         <Route path="/learn" element={user ? <EnglishLab /> : <Navigate to="/login" />} />
         <Route path="/deals" element={user ? <LocalDeals /> : <Navigate to="/login" />} />
         <Route path="/post-deal" element={user ? <PostDeal /> : <Navigate to="/login" />} />
+        <Route path="/section/:type" element={user ? <SectionView /> : <Navigate to="/login" />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />
       <footer className="py-12 px-4 text-center mt-auto w-full">
         <p className="text-[10px] font-black uppercase tracking-widest text-gray-200">
-          PRO VERSION • {APP_CONFIG.year} {APP_CONFIG.developer}
+          INFORM ME • {APP_CONFIG.year}
         </p>
       </footer>
     </div>

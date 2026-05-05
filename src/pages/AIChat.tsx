@@ -112,13 +112,13 @@ const AIChat: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Oracle</h1>
+                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Helper</h1>
                 <span className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-full tracking-widest uppercase border text-[9px] font-black">
-                  GEMINI ACTIVE
+                  AI READY
                 </span>
               </div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                Powered by Gemini 3.1 Neural Core
+                Smart help powered by Google AI
               </p>
             </div>
           </div>
@@ -137,8 +137,8 @@ const AIChat: React.FC = () => {
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
             <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">How can I assist?</h2>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Ask anything to begin session</p>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">How can I help you?</h2>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Ask any question to start</p>
           </div>
         )}
         <AnimatePresence>

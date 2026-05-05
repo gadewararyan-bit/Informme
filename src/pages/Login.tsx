@@ -89,7 +89,7 @@ export default function Login() {
         <div className="w-full mb-10 space-y-4">
           <div className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 focus-within:ring-4 focus-within:ring-orange-500/5 transition-all">
             <label className="block text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest pl-1">
-              Node Positioning
+              Your Location
             </label>
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center pro-shadow shrink-0">
@@ -105,7 +105,7 @@ export default function Login() {
             </div>
           </div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter text-center px-8 leading-relaxed">
-            Specify your geo-coordinates to initialize regional intelligence streams.
+            Enter your area name to see local news and updates.
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export default function Login() {
             className="group relative flex items-center justify-center gap-4 w-full bg-white border border-gray-100 py-5 rounded-[28px] font-black uppercase tracking-[0.2em] text-xs text-gray-900 pro-shadow hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            {loading ? 'Establishing Link...' : 'Link Google Node'}
+            {loading ? 'Logging in...' : 'Sign in with Google'}
           </button>
           
           <button
@@ -137,7 +137,7 @@ export default function Login() {
             className="flex items-center justify-center gap-4 w-full bg-gray-900 py-5 rounded-[28px] font-black uppercase tracking-[0.2em] text-xs text-white hover:scale-[1.02] active:scale-95 transition-all pro-shadow disabled:opacity-20"
           >
             <Mail className="w-5 h-5" />
-            Email Transmission
+            Sign in with Email
           </button>
         </div>
 
@@ -148,7 +148,7 @@ export default function Login() {
               <div className="w-8 h-[1px] bg-gray-900" />
            </div>
            <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.4em] leading-relaxed max-w-[200px] mx-auto">
-            Decentralized Regional <br /> Intelligence Network
+            India's Local Community <br /> Network
           </p>
         </div>
       </motion.div>
