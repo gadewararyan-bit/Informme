@@ -149,9 +149,17 @@ export default function Profile() {
         {/* Manage App Section (Always Visible for Admins) */}
         {user?.isAdmin && (
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Manage App</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Manage App</h3>
+              </div>
+              <button 
+                onClick={() => navigate('/owner-portal')}
+                className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
+              >
+                Open Owner Portal
+              </button>
             </div>
             <SeedingTool />
           </div>

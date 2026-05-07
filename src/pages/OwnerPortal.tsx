@@ -17,8 +17,9 @@ export default function OwnerPortal() {
   
   const [users, setUsers] = useState<User[]>([]);
   const [reportedPosts, setReportedPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'moderation' | 'seeding'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'moderation' | 'content' | 'seeding'>('overview');
 
   // Metrics
   const totalUsers = users.length;
@@ -37,12 +38,18 @@ export default function OwnerPortal() {
     const qReports = query(collection(db, 'posts'), where('reports', '!=', []));
     const unsubReports = onSnapshot(qReports, (snapshot) => {
       setReportedPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
+    });
+
+    const qAllPosts = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
+    const unsubAllPosts = onSnapshot(qAllPosts, (snapshot) => {
+      setAllPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
       setLoading(false);
     });
 
     return () => {
       unsubUsers();
       unsubReports();
+      unsubAllPosts();
     };
   }, [isAdmin]);
 
@@ -115,8 +122,9 @@ export default function OwnerPortal() {
            {[
              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
              { id: 'users', label: 'User Management', icon: Users },
-             { id: 'moderation', label: 'Safety & Guard', icon: ShieldAlert },
-             { id: 'seeding', label: 'Auto Seeding', icon: Database }
+             { id: 'content', label: 'Posts', icon: Database },
+             { id: 'moderation', label: 'Safety', icon: ShieldAlert },
+             { id: 'seeding', label: 'AI Seed', icon: TrendingUp }
            ].map(tab => (
              <button 
                key={tab.id}
@@ -223,6 +231,67 @@ export default function OwnerPortal() {
                  </table>
                </div>
             </div>
+          )}
+
+          {activeTab === 'content' && (
+             <div className="bg-white rounded-[40px] pro-shadow border border-gray-100 overflow-hidden">
+                <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                   <h3 className="text-xl font-black italic tracking-tighter uppercase">Recent Network Posts</h3>
+                   <span className="bg-white px-3 py-1 rounded-full border border-gray-100 text-[10px] font-black uppercase text-gray-400">{allPosts.length} Displayed</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                      <tr>
+                        <th className="px-8 py-6">Author</th>
+                        <th className="px-8 py-6">Content Preview</th>
+                        <th className="px-8 py-6">Metrics</th>
+                        <th className="px-8 py-6">Status</th>
+                        <th className="px-8 py-6">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs">
+                      {allPosts.map(post => (
+                        <tr key={post.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-3">
+                              <img src={post.authorPhoto || ''} className="w-8 h-8 rounded-full bg-gray-100" alt="" />
+                              <div className="min-w-0">
+                                <p className="font-bold text-gray-900 truncate">{post.authorName}</p>
+                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-gray-500 font-medium max-w-xs">
+                            <p className="line-clamp-2">{post.content}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                             <div className="flex gap-4 font-black">
+                                <span className="text-blue-600">{post.likes?.length || 0} L</span>
+                                <span className="text-purple-600">{post.commentCount || 0} C</span>
+                             </div>
+                          </td>
+                          <td className="px-8 py-6">
+                             {post.reports && post.reports.length > 0 ? (
+                               <span className="bg-red-50 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-red-100">Flagged</span>
+                             ) : (
+                               <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">Clean</span>
+                             )}
+                          </td>
+                          <td className="px-8 py-6">
+                             <button 
+                               onClick={() => handleDeletePost(post.id)}
+                               className="p-2 text-gray-300 hover:text-red-500 transition-colors bg-gray-50 rounded-lg"
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+             </div>
           )}
 
           {activeTab === 'moderation' && (

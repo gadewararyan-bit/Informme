@@ -2,9 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getMessaging } from 'firebase/messaging';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
+
+// Initialize Analytics if supported
+export const analytics = typeof window !== 'undefined' 
+  ? isSupported().then(supported => supported ? getAnalytics(app) : null)
+  : Promise.resolve(null);
 
 // Use default database if firestoreDatabaseId is not provided or is "(default)"
 const databaseId = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)' 

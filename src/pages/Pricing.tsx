@@ -124,6 +124,33 @@ const Pricing: React.FC = () => {
           ))}
         </div>
 
+        <div className="mt-20 max-w-2xl mx-auto bg-white rounded-[40px] p-10 pro-shadow border border-gray-100">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+              <ShieldCheck className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black uppercase tracking-widest text-gray-900">Supported Payment Methods</h4>
+              <p className="text-[10px] font-bold text-gray-400 uppercase">Secure infrastructure provided by Google Cloud</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-[10px] font-black uppercase text-blue-600 mb-1">Cards</p>
+              <p className="text-xs font-bold text-gray-600">Credit & Debit Cards (Visa, Mastercard, Amex)</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-[10px] font-black uppercase text-blue-600 mb-1">Indian Accounts</p>
+              <p className="text-xs font-bold text-gray-600">Net Banking & UPI (via Google Cloud Billing)</p>
+            </div>
+          </div>
+
+          <p className="mt-6 text-[10px] text-gray-400 font-medium leading-relaxed">
+            Note: For international transactions, please ensure your debit/credit card has "International Usage" enabled. If you are having trouble with a debit card, try Net Banking or a Credit Card.
+          </p>
+        </div>
+
         <div className="mt-16 text-center">
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-8">Secure Crypto-Encrypted Payments</p>
             <div className="flex justify-center gap-12 opacity-30">

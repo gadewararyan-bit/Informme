@@ -104,41 +104,33 @@ const AIChat: React.FC = () => {
   return (
     <div className="h-[100dvh] bg-[#F8F9FA] flex flex-col pb-20 overflow-hidden relative">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 p-6 shrink-0 z-10 pro-shadow">
+      <header className="bg-white border-b border-gray-100 p-6 shrink-0 z-10">
         <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-gray-900/10">
-              <Bot className="w-6 h-6" />
+            <div className="w-14 h-14 bg-[#0A1128] text-white rounded-2xl flex items-center justify-center pro-shadow">
+              <Bot className="w-8 h-8" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black uppercase tracking-tighter italic text-gray-900">AI Helper</h1>
-                <span className="bg-indigo-50 text-indigo-600 border-indigo-100 px-2 py-0.5 rounded-full tracking-widest uppercase border text-[9px] font-black">
+                <h1 className="text-2xl font-black italic tracking-tighter text-[#0A1128]">AI HELPER</h1>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full tracking-widest uppercase text-[10px] font-black border border-indigo-100">
                   AI READY
                 </span>
               </div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                Smart help powered by Google AI
+                SMART HELP POWERED BY GOOGLE AI
               </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">System Active</span>
             </div>
           </div>
         </div>
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 max-w-4xl mx-auto w-full scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 py-12 space-y-8 max-w-4xl mx-auto w-full scrollbar-hide">
         {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
-            <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">How can I help you?</h2>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Ask any question to start</p>
+          <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+            <h2 className="text-6xl font-black italic uppercase tracking-tighter text-[#BCC1C8] mb-4">HOW CAN I HELP YOU?</h2>
+            <p className="text-sm font-bold text-[#BCC1C8] uppercase tracking-[0.3em]">ASK ANY QUESTION TO START</p>
           </div>
         )}
         <AnimatePresence>
@@ -150,29 +142,18 @@ const AIChat: React.FC = () => {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`flex gap-4 max-w-[90%] sm:max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center pro-shadow transition-transform hover:scale-110
-                  ${message.role === 'user' ? 'bg-gray-900' : 'bg-indigo-600'}`}
-                >
-                  {message.role === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
-                </div>
                 <div className={`p-6 rounded-[32px] pro-shadow relative
                   ${message.role === 'user' 
-                    ? 'bg-white text-gray-900 rounded-tr-none border border-gray-100' 
-                    : 'bg-white rounded-tl-none border border-indigo-100 ring-4 ring-indigo-50/30'}`}
+                    ? 'bg-blue-600 text-white rounded-tr-none' 
+                    : 'bg-white rounded-tl-none border border-gray-100'}`}
                 >
-                  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:text-gray-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-strong:text-indigo-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded whitespace-pre-wrap">
+                  <div className={`prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter whitespace-pre-wrap ${message.role === 'user' ? 'prose-invert text-white' : 'text-gray-800'}`}>
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-3">
-                    <span className="text-[8px] text-gray-300 uppercase font-black tracking-widest">
+                  <div className={`mt-4 flex items-center justify-between border-t pt-3 ${message.role === 'user' ? 'border-white/10' : 'border-gray-50'}`}>
+                    <span className={`text-[8px] uppercase font-black tracking-widest ${message.role === 'user' ? 'text-white/40' : 'text-gray-300'}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    {message.role === 'model' && (
-                      <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-200" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-100" />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -186,16 +167,11 @@ const AIChat: React.FC = () => {
             animate={{ opacity: 1 }}
             className="flex justify-start"
           >
-            <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center pro-shadow animate-pulse">
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
-              </div>
-              <div className="bg-white px-6 py-4 rounded-full border border-indigo-100 pro-shadow">
-                <div className="flex gap-1">
-                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
-                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
-                  <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
-                </div>
+            <div className="bg-white px-6 py-4 rounded-full border border-gray-100 pro-shadow">
+              <div className="flex gap-1">
+                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
               </div>
             </div>
           </motion.div>
@@ -204,22 +180,22 @@ const AIChat: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="sticky bottom-20 p-6 bg-transparent w-full max-w-4xl mx-auto z-10">
-        <form onSubmit={handleSend} className="relative">
+      <div className="sticky bottom-20 px-6 pb-12 pt-4 bg-transparent w-full max-w-4xl mx-auto z-10">
+        <form onSubmit={handleSend} className="relative bg-white rounded-[40px] border border-gray-100 pro-shadow overflow-hidden p-2 flex items-center">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            className="w-full bg-white border border-gray-100 p-6 rounded-[32px] font-bold text-sm pr-20 pro-shadow focus:outline-none focus:ring-4 focus:ring-indigo-600/5 placeholder:text-gray-200"
+            className="flex-1 bg-transparent px-6 py-4 font-bold text-base focus:outline-none placeholder:text-gray-200 text-gray-900"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-20 pro-shadow"
+            className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-20 pro-shadow"
           >
-            <Send className="w-5 h-5 translate-x-0.5" />
+            <Send className="w-6 h-6" />
           </button>
         </form>
       </div>
