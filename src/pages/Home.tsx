@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import { Post } from '../types';
 import PostCard from '../components/feed/PostCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles } from 'lucide-react';
+import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles, Zap } from 'lucide-react';
 import { getLocalInfo } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection as fbCollection, query as fbQuery, orderBy as fbOrderBy, limit as fbLimit, onSnapshot as fbOnSnapshot } from 'firebase/firestore';
+import LocationPicker from '../components/common/LocationPicker';
 
 export default function Home() {
   const { user } = useAuth();
@@ -22,14 +22,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [localData, setLocalData] = useState<any>(null);
   const [loadingLocal, setLoadingLocal] = useState(false);
-  const [isChangingCity, setIsChangingCity] = useState(false);
-  const [newCity, setNewCity] = useState('');
   const [selectedHeadline, setSelectedHeadline] = useState<any>(null);
 
-  const commonCities = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Surat', 'Pune', 'Jaipur'];
-
   const categoryPosts = {
-    news: posts.filter(p => !p.type || p.type === 'news'),
+    news: posts.filter(p => !p.type || p.type === 'news' || p.type === 'general'),
     market: posts.filter(p => p.type === 'market'),
     safety: posts.filter(p => p.type === 'alert'),
     deals: dealsCount
@@ -40,20 +36,6 @@ export default function Home() {
       navigate('/deals');
     } else {
       navigate(`/section/${section}`);
-    }
-  };
-
-  const handleCityChange = async (city: string) => {
-    if (!user) return;
-    try {
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        'location.areaName': city
-      });
-      setIsChangingCity(false);
-    } catch (err) {
-      console.error('Error updating city:', err);
     }
   };
 
@@ -122,19 +104,27 @@ export default function Home() {
   }, [user?.location?.areaName, user?.language]);
 
   useEffect(() => {
+    if (!user?.location?.areaName) return;
+
     const q = query(
       collection(db, 'posts'),
-      orderBy('createdAt', 'desc'),
-      limit(100)
+      where('location.areaName', '==', user.location.areaName)
     );
 
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        const postsData = snapshot.docs.map(doc => ({
+        let postsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Post[];
         
+        // Sort in-memory to avoid index requirement for location + createdAt
+        postsData.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
+          const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : Date.now());
+          return timeB - timeA;
+        });
+
         setPosts(postsData);
         setLoading(false);
       },
@@ -145,7 +135,7 @@ export default function Home() {
     );
 
     return () => unsubscribe();
-  }, [user?.language]);
+  }, [user?.location?.areaName]);
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#F8F9FA]">
@@ -174,52 +164,12 @@ export default function Home() {
           </h1>
           
           <div className="flex flex-wrap items-center gap-2 mt-6">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-xl pro-shadow">
-               <MapPin className="w-4 h-4 text-india-green" />
-               <span className="text-xs font-bold text-gray-700 uppercase">{user?.location?.areaName || 'Detecting Location...'}</span>
-               <button 
-                 onClick={() => setIsChangingCity(!isChangingCity)}
-                 className="ml-2 p-1 hover:bg-gray-50 rounded-lg text-blue-600 transition-colors"
-               >
-                 <ChevronRight className={`w-4 h-4 transition-transform ${isChangingCity ? 'rotate-90' : ''}`} />
-               </button>
-            </div>
+            <LocationPicker />
 
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-100 rounded-xl pro-shadow">
                <Activity className="w-4 h-4 text-saffron" />
                <span className="text-xs font-bold text-gray-700 uppercase">LIVE NETWORK</span>
             </div>
-
-            {isChangingCity && (
-              <div className="absolute top-full left-4 mt-2 w-72 bg-white rounded-2xl pro-shadow border border-gray-100 p-4 z-50">
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newCity}
-                    onChange={(e) => setNewCity(e.target.value)}
-                    placeholder="Search city..."
-                    className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-xs focus:ring-2 ring-blue-100 outline-none"
-                  />
-                  <button 
-                    onClick={() => handleCityChange(newCity)}
-                    className="bg-blue-600 text-white px-3 py-2 text-xs font-bold rounded-xl"
-                  >
-                    GO
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                  {commonCities.map(city => (
-                    <button
-                      key={city}
-                      onClick={() => handleCityChange(city)}
-                      className="text-[10px] text-left hover:bg-gray-50 p-2 rounded-lg font-bold text-gray-600 truncate"
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -306,6 +256,70 @@ export default function Home() {
             </div>
             <Tag className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
           </motion.div>
+
+          {/* Events Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigate('/events')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                <Calendar className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Events</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Local Gatherings</p>
+            </div>
+            <Users className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* Health Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigate('/health')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-cyan-600 group-hover:text-white transition-all">
+                <Activity className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Health</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Diagnostic Insights</p>
+            </div>
+            <Activity className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* AI Lab Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigate('/learn')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                <Star className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">English Lab</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Learn & Grow</p>
+            </div>
+            <Sparkles className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
+
+          {/* AI Chat Section */}
+          <motion.div 
+            whileHover={{ y: -8 }}
+            onClick={() => navigate('/ai-chat')}
+            className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 cursor-pointer group overflow-hidden relative"
+          >
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                <MessageSquare className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">AI Assistant</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">24/7 Smart Guide</p>
+            </div>
+            <Zap className="absolute -bottom-6 -right-6 w-32 h-32 text-gray-50 opacity-20 group-hover:scale-110 transition-transform" />
+          </motion.div>
         </section>
 
         {/* Regular Global Feed Below */}
@@ -346,19 +360,7 @@ export default function Home() {
                   <Activity className="w-10 h-10 text-indigo-400" />
                 </div>
                 <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900 mb-2">No Posts Yet</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No news found in this area yet. Be the first to share something!</p>
-                
-                {isAdmin && (
-                  <div className="mt-8 pt-8 border-t border-gray-100 max-w-sm mx-auto">
-                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4 italic">Admin Help: Add 100 sample posts instantly.</p>
-                    <button 
-                      onClick={() => navigate('/profile')}
-                      className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition-all pro-shadow flex items-center gap-2 mx-auto"
-                    >
-                      Add 100 Posts
-                    </button>
-                  </div>
-                )}
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No news found in <span className="text-indigo-600">{user?.location?.areaName || 'your area'}</span> yet. Be the first to share something!</p>
               </div>
             )}
           </div>

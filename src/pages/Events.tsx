@@ -5,6 +5,7 @@ import { Post } from '../types';
 import PostCard from '../components/feed/PostCard';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, Filter } from 'lucide-react';
+import LocationPicker from '../components/common/LocationPicker';
 
 export default function Events() {
   const { user } = useAuth();
@@ -12,30 +13,45 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user?.location?.areaName) return;
+
     const q = query(
       collection(db, 'posts'),
-      where('type', '==', 'event'),
-      orderBy('createdAt', 'desc')
+      where('location.areaName', '==', user.location.areaName)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const eventData = snapshot.docs.map(doc => ({
+      let allPosts = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Post[];
+      
+      // Filter events in-memory
+      let eventData = allPosts.filter(p => p.type === 'event');
+
+      // Sort in-memory to avoid composite index reqs
+      eventData.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
+        const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : Date.now());
+        return timeB - timeA;
+      });
+
       setEvents(eventData);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user?.location?.areaName]);
 
   return (
     <div className="w-full max-w-[500px] mx-auto p-6 pb-24 bg-[#F8F9FA] min-h-screen">
-      <header className="flex items-center justify-between mb-10 pt-6">
+      <div className="flex justify-end mb-4 pt-4">
+        <LocationPicker />
+      </div>
+      <header className="flex items-center justify-between mb-10">
         <div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">Events</h1>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-2">Discovery Protocol • {user?.location?.areaName || 'Local Node'}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-2">Discovery Protocol</p>
         </div>
         <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-indigo-600/10 transition-transform hover:scale-110">
            <Calendar className="w-6 h-6" />

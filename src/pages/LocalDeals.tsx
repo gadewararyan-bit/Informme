@@ -24,6 +24,7 @@ import {
   BellRing
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import LocationPicker from '../components/common/LocationPicker';
 
 const LocalDeals: React.FC = () => {
   const { user } = useAuth();
@@ -44,32 +45,45 @@ const LocalDeals: React.FC = () => {
   ];
 
   useEffect(() => {
+    if (!user?.location?.areaName) return;
+
     let q = query(
       collection(db, 'deals'),
-      orderBy('createdAt', 'desc'),
-      limit(50)
+      where('location.areaName', '==', user.location.areaName),
+      limit(100)
     );
 
     if (selectedCategory !== 'all') {
       q = query(
         collection(db, 'deals'),
+        where('location.areaName', '==', user.location.areaName),
         where('category', '==', selectedCategory),
-        orderBy('createdAt', 'desc'),
-        limit(50)
+        limit(100)
       );
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dealsData = snapshot.docs.map(doc => ({
+      let dealsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Deal[];
+      
+      // Sort in-memory to avoid composite index requirements
+      dealsData.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
+        const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : Date.now());
+        return timeB - timeA;
+      });
+
       setDeals(dealsData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Deals subscription error:", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [selectedCategory]);
+  }, [selectedCategory, user?.location?.areaName]);
 
   const toggleSaveDeal = async (dealId: string, isSaved: boolean) => {
     if (!user) {
@@ -116,14 +130,25 @@ const LocalDeals: React.FC = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-32">
       <header className="bg-white p-8 pt-12 pb-12 border-b border-gray-100 pro-shadow relative overflow-hidden">
         <div className="max-w-4xl mx-auto relative z-10">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex justify-between items-center mb-6 overflow-x-auto no-scrollbar py-1">
+             <button 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Home</span>
+            </button>
+            <LocationPicker />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center pro-shadow ring-4 ring-orange-600/10">
                 <Tag className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter italic text-gray-900 leading-none">Local Deals</h1>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{user?.location?.areaName || 'Local'} Business Offers</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Business Offers</p>
               </div>
             </div>
             

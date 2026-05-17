@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, HelpCircle } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, HelpCircle, ChevronLeft } from 'lucide-react';
 import { chatWithAIStream } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
+import LocationPicker from '../components/common/LocationPicker';
 
 interface Message {
   role: 'user' | 'model';
@@ -107,21 +108,25 @@ const AIChat: React.FC = () => {
       <header className="bg-white border-b border-gray-100 p-6 shrink-0 z-10">
         <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-[#0A1128] text-white rounded-2xl flex items-center justify-center pro-shadow">
-              <Bot className="w-8 h-8" />
+            <button onClick={() => navigate(-1)} className="p-2.5 bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all border border-gray-100 sm:hidden">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-[#0A1128] text-white rounded-xl sm:rounded-2xl flex items-center justify-center pro-shadow">
+              <Bot className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black italic tracking-tighter text-[#0A1128]">AI HELPER</h1>
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full tracking-widest uppercase text-[10px] font-black border border-indigo-100">
+                <h1 className="text-lg sm:text-2xl font-black italic tracking-tighter text-[#0A1128]">AI HELPER</h1>
+                <span className="hidden sm:block bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full tracking-widest uppercase text-[10px] font-black border border-indigo-100">
                   AI READY
                 </span>
               </div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 hidden sm:block">
                 SMART HELP POWERED BY GOOGLE AI
               </p>
             </div>
           </div>
+          <LocationPicker />
         </div>
       </header>
 

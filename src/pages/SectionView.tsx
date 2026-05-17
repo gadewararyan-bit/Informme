@@ -8,6 +8,7 @@ import { ArrowLeft, Newspaper, IndianRupee, ShieldAlert, Tag, Loader2 } from 'lu
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { translations } from '../constants/translations';
+import LocationPicker from '../components/common/LocationPicker';
 
 const SectionView: React.FC = () => {
   const { type } = useParams<{ type: string }>();
@@ -24,16 +25,33 @@ const SectionView: React.FC = () => {
     const postsRef = collection(db, 'posts');
     const q = query(
       postsRef,
-      where('areaName', '==', user.location.areaName),
-      where('type', '==', type === 'safety' ? 'alert' : type),
-      orderBy('createdAt', 'desc')
+      where('location.areaName', '==', user.location.areaName)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map(doc => ({
+      let allPosts = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Post[];
+      
+      // Filter by type in-memory
+      let fetchedPosts = allPosts.filter(p => {
+        if (type === 'news') {
+          return !p.type || p.type === 'news' || p.type === 'general';
+        }
+        if (type === 'safety') {
+          return p.type === 'alert';
+        }
+        return p.type === type;
+      });
+
+      // Sort in-memory to avoid composite index reqs
+      fetchedPosts.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
+        const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : Date.now());
+        return timeB - timeA;
+      });
+
       setPosts(fetchedPosts);
       setLoading(false);
     }, (error) => {
@@ -91,14 +109,17 @@ const SectionView: React.FC = () => {
       {/* Header */}
       <div className={`bg-gradient-to-r ${header.color} pt-16 pb-24 px-6 relative overflow-hidden`}>
         <div className="max-w-4xl mx-auto relative z-10">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-white/80 hover:text-white mb-8 transition-colors"
-            id="back_button"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-xs font-black uppercase tracking-widest">Back to Home</span>
-          </button>
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+              id="back_button"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-xs font-black uppercase tracking-widest">Back</span>
+            </button>
+            <LocationPicker />
+          </div>
           
           <div className="flex items-center gap-4 text-white">
             <div className="p-4 bg-white/20 backdrop-blur-md rounded-3xl shadow-xl">
@@ -107,7 +128,7 @@ const SectionView: React.FC = () => {
             <div>
               <h1 className="text-4xl font-black italic tracking-tighter uppercase">{header.title}</h1>
               <p className="text-xs font-bold text-white/70 uppercase tracking-widest mt-1">
-                {header.subtitle} &bull; {user?.location?.areaName}
+                {header.subtitle}
               </p>
             </div>
           </div>
@@ -120,6 +141,19 @@ const SectionView: React.FC = () => {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 -mt-12">
+        <div className="flex justify-end mb-6">
+          <button 
+            onClick={() => navigate('/create', { state: { initialType: type === 'safety' ? 'alert' : type } })}
+            className="bg-white text-gray-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 pro-shadow hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+          >
+            {type === 'safety' ? <ShieldAlert className="w-4 h-4 text-rose-600" /> : 
+             type === 'market' ? <IndianRupee className="w-4 h-4 text-emerald-600" /> :
+             type === 'news' ? <Newspaper className="w-4 h-4 text-indigo-600" /> :
+             <Tag className="w-4 h-4 text-amber-600" />}
+            Post {header.title} Update
+          </button>
+        </div>
+
         {loading ? (
           <div className="bg-white rounded-[40px] p-20 flex flex-col items-center justify-center pro-shadow">
             <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
@@ -138,7 +172,7 @@ const SectionView: React.FC = () => {
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900 mb-2">No Posts Yet</h3>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">
-              We haven't found any news for {header.title} in your area yet. Check back soon!
+              We haven't found any updates for {header.title} in <span className="text-indigo-600">{user?.location?.areaName || 'this area'}</span> yet. Check back soon or try changing your location!
             </p>
             <button 
               onClick={() => navigate('/create')}

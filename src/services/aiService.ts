@@ -1,6 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY as string,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {
@@ -206,7 +213,7 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
 
 export async function chatWithAIStream(messages: { role: 'user' | 'model', content: string }[], onChunk: (text: string) => void, language: string = 'en', isPremium: boolean = false) {
   try {
-    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
+    const modelTier = "gemini-3-flash-preview"; // Use stable flash model
     let systemInstruction = isPremium 
       ? `You are "AI Pro Terminal", a highly advanced AI core for InformMe. 
          While you are advanced, you MUST use SIMPLE and CLEAR language. 
@@ -229,12 +236,12 @@ export async function chatWithAIStream(messages: { role: 'user' | 'model', conte
          User Language: ${language}. Be direct, kind, and very easy to understand.`;
 
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || "";
-    if (lastUserMsg.includes('english') || lastUserMsg.includes('learn') || lastUserMsg.includes('grammar') || lastUserMsg.includes('vocabulary')) {
-      systemInstruction += `\n\nEnglish Learning Context: You are also an expert English Language Coach. When the user asks about language:
+    if (lastUserMsg.includes('english') || lastUserMsg.includes('learn') || lastUserMsg.includes('grammar') || lastUserMsg.includes('vocabulary') || lastUserMsg.includes('hindi') || lastUserMsg.includes('marathi')) {
+      systemInstruction += `\n\nLanguage Learning Context: You are also an expert Language Coach. When the user asks about language learning (English, Hindi, Marathi, etc.):
       1. Provide the CORRECT version of their sentence if applicable.
-      2. Explain the GRAMMAR RULE clearly.
-      3. Share VOCABULARY words and 2 usage examples.
-      Be encouraging and use simple vocabulary in your explanations.`;
+      2. Explain the GRAMMAR RULE clearly using simple metaphors.
+      3. Share useful VOCABULARY words with meanings and examples.
+      Be encouraging and use very simple vocabulary in your explanations.`;
     }
 
     const contents = messages.map(msg => ({
@@ -267,6 +274,33 @@ export async function chatWithAIStream(messages: { role: 'user' | 'model', conte
     }
     console.error('AI Chat Error:', error.message || error);
     throw new Error("Something went wrong with the AI connection. Please try again later.");
+  }
+}
+
+export async function getLessonContent(level: string, category: string, targetLanguage: string, instructionLanguage: string = 'English') {
+  try {
+    const response = await withRetry(() => ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Generate a short language lesson for ${level} level in ${category}. 
+      The target language is ${targetLanguage}.
+      The instructions and explanations should be in ${instructionLanguage}.
+      
+      Format strictly as JSON:
+      {
+        "title": "Lesson Title",
+        "description": "Short overview",
+        "content": "Step by step lesson points in simple language",
+        "examples": [{"original": "Sentence in ${targetLanguage}", "translated": "Translation in ${instructionLanguage}", "explanation": "Why this is used"}],
+        "quiz": {"question": "Simple question in ${instructionLanguage}", "options": ["A", "B", "C"], "correct": 0}
+      }
+      
+      Only return the JSON.`,
+    }));
+
+    return safeJsonParse(response.text);
+  } catch (error: any) {
+    console.error('Lesson Error:', error);
+    return null;
   }
 }
 

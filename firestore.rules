@@ -33,13 +33,18 @@ service cloud.firestore {
     function isValidPost(data) {
       return data.authorId == request.auth.uid
         && data.content is string && data.content.size() > 0 && data.content.size() <= 5000
-        && data.type in ['general', 'news', 'event', 'weather', 'alert']
+        && data.type in ['general', 'news', 'event', 'weather', 'alert', 'market']
         && (!('mediaUrl' in data) || data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 1000))
         && (!('eventDetails' in data) || (
           data.eventDetails.date is string &&
           data.eventDetails.time is string &&
           data.eventDetails.venue is string &&
           data.eventDetails.rsvps is list
+        ))
+        && (!('priceData' in data) || (
+          data.priceData.item is string &&
+          data.priceData.price is string &&
+          data.priceData.unit is string
         ))
         && (!('isUrgent' in data) || data.isUrgent is bool)
         && (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 200))
@@ -100,7 +105,7 @@ service cloud.firestore {
         (isOwner(existing().authorId) && isValidPost(incoming()) && 
          incoming().authorId == existing().authorId &&
          incoming().createdAt == existing().createdAt &&
-         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'mediaUrl', 'type', 'likes', 'commentCount', 'updatedAt', 'eventDetails', 'isUrgent', 'location'])) ||
+         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'mediaUrl', 'type', 'likes', 'commentCount', 'updatedAt', 'eventDetails', 'priceData', 'isUrgent', 'location'])) ||
         // Allow others to update likes, rsvps, or comment count - MUST include updatedAt
         (!isOwner(existing().authorId) && 
          incoming().authorId == existing().authorId &&

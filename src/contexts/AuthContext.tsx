@@ -4,6 +4,7 @@ import { auth, db } from '../services/firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { User } from '../types';
 import { ADMIN_EMAILS } from '../constants';
+import { normalizeLocation } from '../lib/locationUtils';
 
 interface AuthContextType {
   user: (User & { isAdmin?: boolean }) | null;
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               photoURL: firebaseUser.photoURL || '',
               createdAt: new Date().toISOString(),
               location: {
-                areaName: 'Mumbai',
+                areaName: normalizeLocation('Mumbai'),
                 lat: 19.076,
                 lng: 72.877
               },

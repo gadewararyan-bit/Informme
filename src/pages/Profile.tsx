@@ -113,11 +113,6 @@ export default function Profile() {
                 <p className="text-lg font-black text-gray-900 leading-none">{user.postCount || 0}</p>
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('contributions')}</p>
               </div>
-              <div className="w-px h-8 bg-gray-200" />
-              <div>
-                <p className="text-lg font-black text-blue-600 leading-none">₹{(user.walletBalance || 0).toFixed(2)}</p>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('wallet')}</p>
-              </div>
             </div>
           </div>
         </div>
@@ -164,35 +159,6 @@ export default function Profile() {
             <SeedingTool />
           </div>
         )}
-
-        {/* Earning Card */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[32px] text-white pro-shadow relative overflow-hidden mb-8">
-           <div className="relative z-10">
-              <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Your Earnings</h3>
-                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">CONNECTED</span>
-              </div>
-              <div className="flex items-end gap-2 mb-4">
-                 <p className="text-3xl font-black italic">₹{(user.walletBalance || 0).toFixed(2)}</p>
-                 <p className="text-[10px] font-bold text-white/50 mb-1 uppercase tracking-widest">Available</p>
-              </div>
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                 <div className="h-full bg-white rounded-full" style={{ width: `${((user.postCount || 0) % 100)}%` }} />
-              </div>
-              <div className="flex justify-between items-center mt-3">
-                 <p className="text-[8px] font-black uppercase tracking-widest text-white/40">
-                    {100 - ((user.postCount || 0) % 100)} posts until next ₹10 reward
-                 </p>
-                 <button 
-                   onClick={() => alert("Withdrawal request sent. You need at least ₹500 to cash out.")}
-                   className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all"
-                 >
-                   Withdraw
-                 </button>
-              </div>
-           </div>
-           <Activity className="absolute -bottom-6 -right-6 w-32 h-32 text-white/5 rotate-12" />
-        </div>
       </div>
 
       {/* Tabs Control */}

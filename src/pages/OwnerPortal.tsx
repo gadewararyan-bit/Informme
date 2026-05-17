@@ -24,7 +24,6 @@ export default function OwnerPortal() {
   // Metrics
   const totalUsers = users.length;
   const totalPosts = users.reduce((acc, curr) => acc + (curr.postCount || 0), 0);
-  const totalPendingPayouts = users.reduce((acc, curr) => acc + (curr.walletBalance || 0), 0);
   const estimatedRevenue = totalPosts * 0.5 + totalUsers * 0.5;
 
   useEffect(() => {
@@ -56,11 +55,6 @@ export default function OwnerPortal() {
   const handleDeletePost = async (postId: string) => {
     if (!window.confirm("Permanent deletion from network?")) return;
     await deleteDoc(doc(db, 'posts', postId));
-  };
-
-  const handlePayUser = async (targetUser: User) => {
-    if (!window.confirm(`Settle ₹${(targetUser.walletBalance || 0).toFixed(2)} for ${targetUser.displayName}?`)) return;
-    await updateDoc(doc(db, 'users', targetUser.uid), { walletBalance: 0 });
   };
 
   if (!isAdmin) {
@@ -105,7 +99,7 @@ export default function OwnerPortal() {
              { label: 'Total Nodes', val: totalUsers, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
              { label: 'Network Output', val: totalPosts, icon: Activity, color: 'text-purple-600', bg: 'bg-purple-50' },
              { label: 'Safety Index', val: reportedPosts.length === 0 ? '100%' : `${100 - reportedPosts.length}%`, icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-             { label: 'Yield Margin', val: `₹${(estimatedRevenue - totalPendingPayouts).toFixed(0)}`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
+             { label: 'Ad Revenue', val: `₹${estimatedRevenue.toFixed(0)}`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
            ].map((stat, i) => (
              <div key={i} className="bg-white p-6 rounded-[32px] pro-shadow border border-gray-100">
                <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-4`}>
@@ -152,13 +146,9 @@ export default function OwnerPortal() {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Gross Ad Revenue</span>
                         <span className="text-2xl font-black">₹{estimatedRevenue.toFixed(0)}</span>
                      </div>
-                     <div className="flex justify-between items-center py-4 border-b border-white/5">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">User Disbursal</span>
-                        <span className="text-2xl font-black text-rose-400">₹{totalPendingPayouts.toFixed(2)}</span>
-                     </div>
                      <div className="flex justify-between items-center pt-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Net Profit</span>
-                        <span className="text-3xl font-black text-emerald-400">₹{(estimatedRevenue - totalPendingPayouts).toFixed(0)}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Projected Net Profit</span>
+                        <span className="text-3xl font-black text-emerald-400">₹{estimatedRevenue.toFixed(0)}</span>
                      </div>
                    </div>
                  </div>
@@ -196,8 +186,7 @@ export default function OwnerPortal() {
                        <th className="px-8 py-6">User / Node</th>
                        <th className="px-8 py-6">Email Index</th>
                        <th className="px-8 py-6">Points</th>
-                       <th className="px-8 py-6">Earnings</th>
-                       <th className="px-8 py-6">Action</th>
+                       <th className="px-8 py-6">Contributions</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-gray-50">
@@ -214,17 +203,7 @@ export default function OwnerPortal() {
                          </td>
                          <td className="px-8 py-6 text-xs text-gray-500 font-medium">{u.email}</td>
                          <td className="px-8 py-6 font-bold text-indigo-600">{(u.engagementPoints || 0) + (u.points || 0)}</td>
-                         <td className="px-8 py-6 font-bold text-emerald-600">₹{(u.walletBalance || 0).toFixed(2)}</td>
-                         <td className="px-8 py-6">
-                            {(u.walletBalance || 0) > 0 && (
-                              <button 
-                                onClick={() => handlePayUser(u)}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
-                              >
-                                Settle
-                              </button>
-                            )}
-                         </td>
+                         <td className="px-8 py-6 font-bold text-emerald-600">{u.postCount || 0} Posts</td>
                        </tr>
                      ))}
                    </tbody>

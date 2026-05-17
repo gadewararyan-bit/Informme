@@ -4,6 +4,7 @@ import { Activity, Apple, Dumbbell, Flame, TrendingUp, Quote, RefreshCw, Loader2
 import { getHealthAdvice } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import LocationPicker from '../components/common/LocationPicker';
 
 interface HealthData {
   dailyTip: string;
@@ -42,16 +43,18 @@ export default function Health() {
             <h1 className="text-xl font-black uppercase italic tracking-tighter text-gray-900">
               Wellness <span className="text-emerald-600">Protocol</span>
             </h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Bio-Metric Optimization</p>
           </div>
         </div>
-        <button 
-          onClick={fetchAdvice}
-          disabled={loading}
-          className="w-10 h-10 bg-white rounded-xl flex items-center justify-center pro-shadow border border-gray-100 text-gray-400 hover:text-indigo-600 transition-all disabled:opacity-50"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-3">
+          <LocationPicker />
+          <button 
+            onClick={fetchAdvice}
+            disabled={loading}
+            className="w-10 h-10 bg-white rounded-xl flex items-center justify-center pro-shadow border border-gray-100 text-gray-400 hover:text-indigo-600 transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       <div className="p-6 space-y-8 max-w-[500px] mx-auto">

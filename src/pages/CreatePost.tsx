@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Image as ImageIcon, MapPin, Send, X, Video, Play, RefreshCw, AlertTriangle, Trophy, IndianRupee, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { validatePostContent } from '../services/aiService';
+import { normalizeLocation } from '../lib/locationUtils';
 
 export default function CreatePost() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const locationState = useLocation();
+  const initialType = (locationState.state as any)?.initialType || 'news';
+  
   const [content, setContent] = useState('');
-  const [type, setType] = useState<'general' | 'news' | 'event' | 'weather' | 'alert' | 'market'>('general');
+  const [type, setType] = useState<'general' | 'news' | 'event' | 'weather' | 'alert' | 'market'>(initialType);
   const [priceData, setPriceData] = useState({ item: '', price: '', unit: 'kg' });
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -67,6 +71,8 @@ export default function CreatePost() {
         return;
       }
 
+      const normalizedArea = normalizeLocation(locationName || user.location?.areaName || 'Mumbai');
+
       const postData: any = {
         authorId: user.uid,
         authorName: user.displayName,
@@ -77,7 +83,7 @@ export default function CreatePost() {
         type,
         language: user.language || 'en',
         location: {
-          areaName: locationName.trim() || user.location?.areaName || 'Mumbai',
+          areaName: normalizedArea,
           pinCode: pinCode.trim() || user.location?.pinCode || null,
           lat: user.location?.lat || 19.076,
           lng: user.location?.lng || 72.877,
@@ -99,19 +105,10 @@ export default function CreatePost() {
       if (user) {
         const userRef = doc(db, 'users', user.uid);
         const currentCount = (user.postCount || 0) + 1;
-        const currentWallet = user.walletBalance || 0;
-        const reachedMilestone = currentCount > 0 && currentCount % 100 === 0;
-        const newWallet = reachedMilestone ? currentWallet + 10 : currentWallet;
         
         await updateDoc(userRef, { 
-          postCount: currentCount, 
-          walletBalance: newWallet 
+          postCount: currentCount
         });
-
-        if (reachedMilestone) {
-          setShowMilestone(true);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
       }
 
       navigate('/');
@@ -175,7 +172,7 @@ export default function CreatePost() {
 
         {/* Type Ribbon */}
         <div className="flex gap-2 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
-          {['general', 'news', 'market', 'event', 'weather', 'alert'].map((t) => (
+          {['news', 'alert', 'market', 'event', 'weather', 'general'].map((t) => (
             <button
               key={t}
               type="button"
@@ -186,7 +183,12 @@ export default function CreatePost() {
                 : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-300'
               }`}
             >
-              {t === 'market' ? '🏷️ Rate Index' : t}
+              {t === 'news' ? '🗞️ Local News' : 
+               t === 'alert' ? '🚨 Safety Alert' :
+               t === 'market' ? '⚖️ Market Rate' :
+               t === 'event' ? '📅 Event' :
+               t === 'weather' ? '☁️ Weather' :
+               '💬 General'}
             </button>
           ))}
         </div>

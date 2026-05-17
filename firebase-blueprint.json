@@ -35,8 +35,16 @@
         "content": { "type": "string" },
         "mediaUrl": { "type": "string" },
         "mediaType": { "type": "string", "enum": ["image", "video"] },
-        "type": { "type": "string", "enum": ["general", "news", "event", "weather", "alert"] },
+        "type": { "type": "string", "enum": ["general", "news", "event", "weather", "alert", "market"] },
         "language": { "type": "string" },
+        "priceData": {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "price": { "type": "string" },
+            "unit": { "type": "string" }
+          }
+        },
         "location": {
           "type": "object",
           "properties": {
