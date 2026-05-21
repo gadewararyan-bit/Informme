@@ -86,9 +86,13 @@ function AppContent() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />
-      <footer className="py-12 px-4 text-center mt-auto w-full">
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-200">
-          INFORM ME • {APP_CONFIG.year}
+      <footer className="py-12 px-4 text-center mt-auto w-full border-t border-gray-50 bg-gray-50/50">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+          INFORM ME &bull; {APP_CONFIG.year}
+        </p>
+        <div className="h-4" /> {/* 2-line spacing */}
+        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+          Created &amp; Owned by Aryan Gadewar
         </p>
       </footer>
     </div>
