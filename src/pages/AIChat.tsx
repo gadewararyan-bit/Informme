@@ -116,13 +116,13 @@ const AIChat: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-2xl font-black italic tracking-tighter text-[#0A1128]">AI HELPER</h1>
+                <h1 className="text-lg sm:text-2xl font-black italic tracking-tighter text-[#0A1128]">INFORMME AI</h1>
                 <span className="hidden sm:block bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full tracking-widest uppercase text-[10px] font-black border border-indigo-100">
                   AI READY
                 </span>
               </div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 hidden sm:block">
-                SMART HELP POWERED BY GOOGLE AI
+                OFFICIAL AI ASSISTANT
               </p>
             </div>
           </div>
