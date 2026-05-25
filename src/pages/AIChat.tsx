@@ -131,7 +131,7 @@ const AIChat: React.FC = () => {
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-12 space-y-8 max-w-4xl mx-auto w-full scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-6 pt-12 pb-48 space-y-8 max-w-4xl mx-auto w-full scrollbar-hide">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
             <h2 className="text-6xl font-black italic uppercase tracking-tighter text-[#BCC1C8] mb-4">HOW CAN I HELP YOU?</h2>
@@ -175,7 +175,7 @@ const AIChat: React.FC = () => {
             <div className="bg-white px-6 py-4 rounded-full border border-gray-100 pro-shadow">
               <div className="flex gap-1">
                 <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
-                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                 <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
                 <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
               </div>
             </div>
@@ -185,7 +185,7 @@ const AIChat: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="sticky bottom-20 px-6 pb-12 pt-4 bg-transparent w-full max-w-4xl mx-auto z-10">
+      <div className="fixed bottom-[104px] sm:bottom-[112px] left-1/2 -translate-x-1/2 px-6 pb-6 pt-4 bg-gradient-to-t from-[#F8F9FA] via-[#F8F9FA]/90 to-transparent w-full max-w-4xl z-40">
         <form onSubmit={handleSend} className="relative bg-white rounded-[40px] border border-gray-100 pro-shadow overflow-hidden p-2 flex items-center">
           <input
             type="text"
