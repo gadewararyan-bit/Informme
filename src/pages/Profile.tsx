@@ -142,7 +142,7 @@ export default function Profile() {
         </div>
 
         {/* Manage App Section (Always Visible for Admins) */}
-        {user?.isAdmin && (
+        {isAdmin && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">

@@ -109,4 +109,13 @@ export interface Deal {
   createdAt: any;
   mediaUrl?: string;
   savedBy: string[];
+  // Profit Share & Agreement Data
+  hasSignedProfitAgreement?: boolean;
+  signerName?: string;
+  signerPhone?: string;
+  expectedUnitsPerMonth?: number;
+  expectedProfitPerUnit?: number;
+  selfReportedProfit?: number; 
+  payoutStatus?: 'pending' | 'partially_paid' | 'fully_paid';
+  adminVerifiedAmount?: number;
 }

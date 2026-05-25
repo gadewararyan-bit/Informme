@@ -26,7 +26,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { t, setLanguage } = useTranslation();
   const navigate = useNavigate();
-  const isAdmin = !!user?.isAdmin;
+  const isAdmin = !!user?.isAdmin || (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false);
   const [areaName, setAreaName] = useState(user?.location?.areaName || '');
   const [pinCode, setPinCode] = useState(user?.location?.pinCode || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');

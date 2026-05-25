@@ -14,7 +14,7 @@ export default function PlatformPulse() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isAdmin = !!user?.isAdmin;
+  const isAdmin = !!user?.isAdmin || (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false);
   const [users, setUsers] = useState<User[]>([]);
   const [reportedPosts, setReportedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);

@@ -14,7 +14,11 @@ import {
   Info,
   Loader2,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Percent,
+  Coins,
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 
 const PostDeal: React.FC = () => {
@@ -30,7 +34,13 @@ const PostDeal: React.FC = () => {
     businessName: '',
     category: 'retail',
     validUntil: '',
-    mediaUrl: ''
+    mediaUrl: '',
+    // Royalty inputs
+    signerName: '',
+    signerPhone: '',
+    expectedUnitsPerMonth: '50',
+    expectedProfitPerUnit: '100',
+    hasSignedProfitAgreement: false
   });
 
   const categories = [
@@ -40,9 +50,25 @@ const PostDeal: React.FC = () => {
     { id: 'other', label: 'Other' }
   ];
 
+  // Live Calculations
+  const units = parseInt(formData.expectedUnitsPerMonth) || 0;
+  const unitProfit = parseInt(formData.expectedProfitPerUnit) || 0;
+  const totalEstimatedProfit = units * unitProfit;
+  const royaltyShare2Percent = totalEstimatedProfit * 0.02;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (!formData.hasSignedProfitAgreement) {
+      alert("Please accept the 2% profit-sharing agreement to proceed.");
+      return;
+    }
+
+    if (!formData.signerName.trim()) {
+      alert("Please enter your signature name to authorize the agreement.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -62,7 +88,17 @@ const PostDeal: React.FC = () => {
         validUntil: new Date(formData.validUntil),
         createdAt: serverTimestamp(),
         mediaUrl: formData.mediaUrl || null,
-        savedBy: []
+        savedBy: [],
+        
+        // Profit Share Fields
+        hasSignedProfitAgreement: formData.hasSignedProfitAgreement,
+        signerName: formData.signerName,
+        signerPhone: formData.signerPhone,
+        expectedUnitsPerMonth: units,
+        expectedProfitPerUnit: unitProfit,
+        selfReportedProfit: totalEstimatedProfit,
+        payoutStatus: 'pending',
+        adminVerifiedAmount: 0
       };
 
       await addDoc(collection(db, 'deals'), dealData);
@@ -214,6 +250,113 @@ const PostDeal: React.FC = () => {
                 onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
                 className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-orange-100 outline-none transition-all"
               />
+            </div>
+          </section>
+          
+          {/* Section 4: 2% Profit Share Agreement */}
+          <section className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 bg-indigo-50 text-indigo-600 rounded-bl-3xl flex items-center gap-1">
+              <Percent className="w-4 h-4" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Royalty Cut</span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
+               <Coins className="w-4 h-4 text-indigo-600" />
+               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#0D1B2A]">2% Campaign Profit Share Agreement</h3>
+            </div>
+
+            <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+              To list your store's special offer on the InformMe Local Economic Network, you agree to transfer <b className="text-gray-900">2% of the net campaign profit</b> generated from deals claimed by customers via the app to the platform owner, <b>Aryan Gadewar</b>.
+            </p>
+
+            <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-50/70 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-gray-400">Est. Units Redeemed / Month</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.expectedUnitsPerMonth}
+                    onChange={(e) => setFormData({...formData, expectedUnitsPerMonth: e.target.value})}
+                    placeholder="50"
+                    className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-gray-400">Net Profit per Unit (₹)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.expectedProfitPerUnit}
+                    onChange={(e) => setFormData({...formData, expectedProfitPerUnit: e.target.value})}
+                    placeholder="100"
+                    className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Ledger Calculation Box */}
+            <div className="p-6 bg-slate-900 text-white rounded-[32px] space-y-4">
+               <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 flex items-center gap-1.5 border-b border-slate-800 pb-3">
+                 <FileText className="w-3.5 h-3.5 text-indigo-400" /> Live Revenue Share Estimation
+               </h4>
+               <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span>Expected Total Profit:</span>
+                    <span className="font-bold text-white">₹{totalEstimatedProfit.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span>Your Share (98%):</span>
+                    <span className="font-bold text-slate-100">₹{(totalEstimatedProfit * 0.98).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-indigo-300 font-bold">
+                    <span className="flex items-center gap-1">Aryan's Royalty Cut (2%):</span>
+                    <span className="text-xl font-black text-indigo-400">₹{royaltyShare2Percent.toLocaleString()}</span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Signature Capture */}
+            <div className="space-y-4 pt-2">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Digital Signature (Your Name)</label>
+                    <input
+                      required
+                      type="text"
+                      value={formData.signerName}
+                      onChange={(e) => setFormData({...formData, signerName: e.target.value})}
+                      placeholder="Type Full Name to Authorize"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none uppercase font-mono tracking-wider italic text-gray-700"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Signer Contact Number (WhatsApp)</label>
+                    <input
+                      required
+                      type="tel"
+                      value={formData.signerPhone}
+                      onChange={(e) => setFormData({...formData, signerPhone: e.target.value})}
+                      placeholder="e.g. +91 98765 43210"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none"
+                    />
+                  </div>
+               </div>
+
+               <label className="flex items-start gap-3 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-50 cursor-pointer hover:bg-emerald-50/70 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={formData.hasSignedProfitAgreement}
+                    onChange={(e) => setFormData({...formData, hasSignedProfitAgreement: e.target.checked})}
+                    className="mt-1 sticky top-0 accent-emerald-600 rounded border-gray-300 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                  />
+                  <span className="text-[10px] leading-relaxed font-bold tracking-tight text-emerald-800 uppercase">
+                    I agree to the 2% profit royalty terms. I certify that all self-estimates provided represent true records and agree to transfer 2% of my net campaign earnings to Aryan Gadewar via UPI or Bank Transfer.
+                  </span>
+               </label>
             </div>
           </section>
 

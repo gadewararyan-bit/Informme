@@ -10,12 +10,13 @@ import { getLocalInfo } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import LocationPicker from '../components/common/LocationPicker';
+import { ADMIN_EMAILS } from '../constants';
 
 export default function Home() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isAdmin = !!user?.isAdmin;
+  const isAdmin = !!user?.isAdmin || (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [dealsCount, setDealsCount] = useState(0);
   const [userCount, setUserCount] = useState(0);

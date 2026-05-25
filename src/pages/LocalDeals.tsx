@@ -21,7 +21,8 @@ import {
   ArrowLeft,
   Sparkles,
   Bell,
-  BellRing
+  BellRing,
+  Share2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LocationPicker from '../components/common/LocationPicker';
@@ -35,6 +36,33 @@ const LocalDeals: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'browse' | 'saved'>('browse');
   const [reminders, setReminders] = useState<string[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleShare = async (e: React.MouseEvent, deal: Deal) => {
+    e.stopPropagation();
+    const shareText = `🔥 Special Offer from ${deal.businessName}: "${deal.title}" - ${deal.offer}! Claim it on InformMe app.`;
+    const shareUrl = window.location.origin + `/deals`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: deal.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.log("Error sharing:", err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        setCopiedId(deal.id);
+        setTimeout(() => setCopiedId(null), 2000);
+      } catch (err) {
+        console.error("Failed to copy clipboard", err);
+      }
+    }
+  };
 
   const categories = [
     { id: 'all', label: 'All Deals', icon: Tag, color: 'text-gray-600', bg: 'bg-gray-100' },
@@ -247,6 +275,19 @@ const LocalDeals: React.FC = () => {
                        )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => handleShare(e, deal)}
+                        className={`p-3 rounded-2xl transition-all relative ${
+                          copiedId === deal.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-50 text-gray-400 hover:text-emerald-500'
+                        }`}
+                        title="Share offer"
+                      >
+                        {copiedId === deal.id ? (
+                          <span className="text-[10px] font-black uppercase tracking-widest px-1">Copied</span>
+                        ) : (
+                          <Share2 className="w-5 h-5" />
+                        )}
+                      </button>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
