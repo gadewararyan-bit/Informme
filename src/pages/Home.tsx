@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, doc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import { Post } from '../types';
 import PostCard from '../components/feed/PostCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles, Zap, Search } from 'lucide-react';
+import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles, Zap, Search, Phone, Copy, Check } from 'lucide-react';
 import { getLocalInfo } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +28,27 @@ export default function Home() {
   const [selectedHeadline, setSelectedHeadline] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Owner Contact / Sponsor Details States
+  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [ownerConfig, setOwnerConfig] = useState(() => ({
+    upiId: localStorage.getItem('owner_upi_id') || '8600869341@okaxis',
+    phone: localStorage.getItem('owner_phone') || '+918600869341'
+  }));
+
+  useEffect(() => {
+    const unsubOwner = onSnapshot(doc(db, 'system_config', 'owner_details'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setOwnerConfig({
+          upiId: data.upiId || '8600869341@okaxis',
+          phone: data.phone || '+918600869341'
+        });
+      }
+    });
+    return () => unsubOwner();
+  }, []);
 
   const filteredPosts = posts.filter(post => {
     // Category filtering
@@ -439,7 +460,12 @@ export default function Home() {
                           <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2 block">SPONSORED</span>
                           <h4 className="text-xl font-black italic tracking-tighter uppercase mb-2">Partner with Us</h4>
                           <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-relaxed mb-4">Promote your business to people in this area.</p>
-                          <button className="text-[10px] font-black uppercase tracking-widest bg-white text-gray-900 px-6 py-2.5 rounded-xl hover:scale-105 transition-all">Contact Us</button>
+                          <button 
+                            onClick={() => setPartnerModalOpen(true)}
+                            className="text-[10px] font-black uppercase tracking-widest bg-white text-gray-900 px-6 py-2.5 rounded-xl hover:scale-105 transition-all cursor-pointer"
+                          >
+                            Contact Us
+                          </button>
                        </div>
                        <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12 group-hover:rotate-45 transition-transform" />
                     </div>
@@ -466,6 +492,133 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Sponsor modal */}
+      <AnimatePresence>
+        {partnerModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPartnerModalOpen(false)}
+              className="absolute inset-0 bg-gray-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-[40px] px-8 py-10 w-full max-w-lg pro-shadow border border-gray-100 relative z-10 overflow-hidden text-[#0D1B2A]"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setPartnerModalOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto pro-shadow text-white">
+                  <Sparkles className="w-8 h-8 animate-pulse" />
+                </div>
+                
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900">
+                  {language === 'mr' ? 'आपला व्यवसाय वाढवा' : language === 'hi' ? 'अपना व्यवसाय बढ़ाएं' : 'Promote Your Business'}
+                </h3>
+                
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
+                  {language === 'mr' 
+                    ? 'या भागातील हजारो नागरिकांपर्यंत तुमच्या व्यवसायाची जाहिरात पोहोचवा!' 
+                    : language === 'hi'
+                      ? 'इस क्षेत्र के हजारों नागरिकों तक अपने व्यवसाय का विज्ञापन पहुंचाएं!'
+                      : 'Reach thousands of active local citizens in this area with dynamic sponsors!'}
+                </p>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                {/* Call & WhatsApp Box */}
+                <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 space-y-4">
+                  <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-1">
+                    {language === 'mr' ? 'थेट संपर्क साधा' : language === 'hi' ? 'सीधा संपर्क करें' : 'Direct Contacts (Owner)'}
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Call Owner Button */}
+                    <a
+                      href={`tel:${ownerConfig.phone}`}
+                      className="flex items-center justify-center gap-2 px-5 py-4 bg-white hover:bg-gray-100 text-gray-900 border border-gray-200 rounded-2xl text-xs font-black uppercase tracking-widest transition-all pro-shadow cursor-pointer"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-indigo-500" />
+                      {language === 'mr' ? 'कॉल करा' : language === 'hi' ? 'कॉल करें' : 'Call Owner'}
+                    </a>
+
+                    {/* WhatsApp Button */}
+                    <a
+                      href={`https://wa.me/${ownerConfig.phone.replace(/[^0-9]/g, '')}?text=Hi%20Aryan,%20I%20want%20to%20partner%20with%20InformMe%20for%20advertising%20my%20business!`}
+                      target="_blank"
+                      referrerPolicy="no-referrer"
+                      className="flex items-center justify-center gap-2 px-5 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all pro-shadow cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {language === 'mr' ? 'व्हॉट्सॲप' : language === 'hi' ? 'व्हाट्सएप' : 'WhatsApp'}
+                    </a>
+                  </div>
+                </div>
+
+                {/* UPI Support Box */}
+                <div className="bg-indigo-950 text-white rounded-3xl p-6 relative overflow-hidden">
+                  <div className="relative z-10 space-y-3">
+                    <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest block">
+                      {language === 'mr' ? 'पेमेंट आणि मदत' : language === 'hi' ? 'भुगतान और सहायता' : 'Campaign Payments & Support'}
+                    </span>
+                    
+                    <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold leading-relaxed">
+                      {language === 'mr' 
+                        ? 'थेट पेमेंट किंवा सपोर्टसाठी यूपीआय वापरा:' 
+                        : language === 'hi'
+                          ? 'सीधे भुगतान या सहायता के लिए यूपीआई का उपयोग करें:'
+                          : 'Use UPI ID for campaign bookings or instant activation:'}
+                    </p>
+
+                    <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl p-3">
+                      <code className="text-[11px] font-mono text-indigo-200 font-bold select-all break-all pr-2">
+                        {ownerConfig.upiId}
+                      </code>
+
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(ownerConfig.upiId);
+                          setCopiedUpi(true);
+                          setTimeout(() => setCopiedUpi(false), 2000);
+                        }}
+                        className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white cursor-pointer flex-shrink-0"
+                        title="Copy UPI Address"
+                      >
+                        {copiedUpi ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl" />
+                </div>
+              </div>
+
+              <div className="mt-8 text-center">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                  INFORMME NETWORK • ACTIVE 24/7
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

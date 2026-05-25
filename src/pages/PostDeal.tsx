@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot, doc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { 
@@ -18,7 +18,11 @@ import {
   Percent,
   Coins,
   ShieldCheck,
-  FileText
+  FileText,
+  Copy,
+  Check,
+  Phone,
+  MessageSquare
 } from 'lucide-react';
 
 const PostDeal: React.FC = () => {
@@ -42,6 +46,26 @@ const PostDeal: React.FC = () => {
     expectedProfitPerUnit: '100',
     hasSignedProfitAgreement: false
   });
+
+  const [paymentTxId, setPaymentTxId] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [ownerConfig, setOwnerConfig] = useState({
+    upiId: '8600869341@okaxis',
+    phone: '+918600869341'
+  });
+
+  useEffect(() => {
+    const unsubOwner = onSnapshot(doc(db, 'system_config', 'owner_details'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setOwnerConfig({
+          upiId: data.upiId || '8600869341@okaxis',
+          phone: data.phone || '+918600869341'
+        });
+      }
+    });
+    return () => unsubOwner();
+  }, []);
 
   const categories = [
     { id: 'food', label: 'Food & Dining' },
@@ -67,6 +91,11 @@ const PostDeal: React.FC = () => {
 
     if (!formData.signerName.trim()) {
       alert("Please enter your signature name to authorize the agreement.");
+      return;
+    }
+
+    if (!paymentTxId.trim() || paymentTxId.trim().length < 6) {
+      alert("Please enter a valid upfront listing Payment Transaction ID (at least 6 characters) to activate your deal campaign.");
       return;
     }
 
@@ -98,7 +127,8 @@ const PostDeal: React.FC = () => {
         expectedProfitPerUnit: unitProfit,
         selfReportedProfit: totalEstimatedProfit,
         payoutStatus: 'pending',
-        adminVerifiedAmount: 0
+        adminVerifiedAmount: 0,
+        paymentTxId: paymentTxId.trim()
       };
 
       await addDoc(collection(db, 'deals'), dealData);
@@ -357,6 +387,67 @@ const PostDeal: React.FC = () => {
                     I agree to the 2% profit royalty terms. I certify that all self-estimates provided represent true records and agree to transfer 2% of my net campaign earnings to Aryan Gadewar via UPI or Bank Transfer.
                   </span>
                </label>
+            </div>
+          </section>
+
+          {/* Section 5: Upfront Listing Payment */}
+          <section className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 bg-amber-50 text-amber-600 rounded-bl-3xl flex items-center gap-1">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Required</span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
+               <Coins className="w-4 h-4 text-[#0D1B2A]" />
+               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#0D1B2A]">Sponsorship Listing Activation</h3>
+            </div>
+
+            <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+              To publish your promotional campaign deal in the local feed, an upfront listing activation fee of <b className="text-gray-900">₹99</b> is required. This prevents spam and verifies your shop's authenticity.
+            </p>
+
+            <div className="bg-slate-900 text-white rounded-[32px] p-6 space-y-4">
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest block">Direct UPI Activation Address</span>
+                <div className="flex items-center justify-between border border-white/10 bg-white/5 rounded-2xl p-3">
+                  <code className="text-[11px] font-mono font-bold text-indigo-200">{ownerConfig.upiId}</code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(ownerConfig.upiId);
+                      setCopiedUpi(true);
+                      setTimeout(() => setCopiedUpi(false), 2000);
+                    }}
+                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white cursor-pointer"
+                  >
+                    {copiedUpi ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                <Phone className="w-4 h-4 text-indigo-400" />
+                <span>Enquiries & Activation Support: <a href={`tel:${ownerConfig.phone}`} className="text-white hover:underline">{ownerConfig.phone}</a></span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase text-gray-400 ml-1 font-sans">Payment Reference Number (12-digit UPI Transaction ID / UTR / Ref No.)</label>
+               <input
+                 required
+                 type="text"
+                 value={paymentTxId}
+                 onChange={(e) => setPaymentTxId(e.target.value)}
+                 placeholder="e.g. 415309251024 or UPI/410293"
+                 className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-indigo-100 outline-none transition-all uppercase font-mono tracking-wider text-gray-800"
+               />
+               <p className="text-[9px] font-semibold text-amber-600 uppercase tracking-widest mt-1">
+                 * After submitting, Aryan will audit the reference with his bank statements for fast deployment approval!
+               </p>
             </div>
           </section>
 

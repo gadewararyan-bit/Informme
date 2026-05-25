@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LocationPicker from '../components/common/LocationPicker';
+import { ADMIN_EMAILS } from '../constants';
 
 const LocalDeals: React.FC = () => {
   const { user } = useAuth();
@@ -96,6 +97,25 @@ const LocalDeals: React.FC = () => {
         ...doc.data()
       })) as Deal[];
       
+      const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+      dealsData = dealsData.filter(deal => {
+        let isExpired = false;
+        if (deal.validUntil) {
+          const expDate = deal.validUntil.toDate ? deal.validUntil.toDate() : new Date(deal.validUntil);
+          isExpired = expDate.getTime() < Date.now();
+        }
+
+        const isMyOwn = user && deal.authorId === user.uid;
+
+        // Hide expired deals for general public
+        if (isExpired && !isMyOwn && !isAdmin) {
+          return false;
+        }
+
+        if (deal.isApproved) return true;
+        return isMyOwn || isAdmin;
+      });
+
       // Sort in-memory to avoid composite index requirements
       dealsData.sort((a, b) => {
         const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
@@ -335,8 +355,8 @@ const LocalDeals: React.FC = () => {
                         <MapPin className="w-4 h-4 text-india-green" />
                         <span className="text-[10px] font-black uppercase tracking-widest">{deal.location.areaName}</span>
                      </div>
-                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300">
-                        Valid: {daysLeft} Days Left
+                     <div className={`text-[9px] font-black uppercase tracking-[0.2em] ${daysLeft === 0 ? 'text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 font-bold' : 'text-gray-400'}`}>
+                        {daysLeft === 0 ? '🚫 EXPIRED CAMPAIGN' : `Valid: ${daysLeft} Days Left`}
                      </div>
                   </div>
                   

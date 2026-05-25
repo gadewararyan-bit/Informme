@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Image as ImageIcon, MapPin, Send, X, Video, Play, RefreshCw, AlertTriangle, Trophy, IndianRupee, Calendar } from 'lucide-react';
+import { Image as ImageIcon, MapPin, Send, X, Video, Play, RefreshCw, AlertTriangle, Trophy, IndianRupee, Calendar, Check, Copy, Sparkles, Phone, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { validatePostContent } from '../services/aiService';
 import { normalizeLocation } from '../lib/locationUtils';
@@ -30,6 +30,29 @@ export default function CreatePost() {
   const [isLoading, setIsLoading] = useState(false);
   const [showMilestone, setShowMilestone] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Sponsored Ads / Campaign payment states
+  const [isSponsored, setIsSponsored] = useState(false);
+  const [campaignDurationDays, setCampaignDurationDays] = useState(7);
+  const [paymentTxId, setPaymentTxId] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [ownerConfig, setOwnerConfig] = useState({
+    upiId: '8600869341@okaxis',
+    phone: '+918600869341'
+  });
+
+  useEffect(() => {
+    const unsubOwner = onSnapshot(doc(db, 'system_config', 'owner_details'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setOwnerConfig({
+          upiId: data.upiId || '8600869341@okaxis',
+          phone: data.phone || '+918600869341'
+        });
+      }
+    });
+    return () => unsubOwner();
+  }, []);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -62,6 +85,17 @@ export default function CreatePost() {
     if (!content.trim() || !user) return;
     setValidationError(null);
 
+    if (isSponsored) {
+      if (!paymentTxId.trim() || paymentTxId.trim().length < 6) {
+        setValidationError("Please enter a valid UPI Transaction ID (at least 6 characters) to submit your sponsored ad request.");
+        return;
+      }
+      if (campaignDurationDays === 99999) {
+        setValidationError("Sponsored campaigns cannot have Unlimited duration. Please select a valid period (1, 3, 7, 15, or 30 days).");
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const validation = await validatePostContent(content);
@@ -82,6 +116,11 @@ export default function CreatePost() {
         mediaType: mediaType || null,
         type,
         language: user.language || 'en',
+        isSponsored,
+        paymentTxId: isSponsored ? paymentTxId.trim() : null,
+        paymentStatus: isSponsored ? 'pending' : null,
+        campaignDurationDays,
+        expiresAt: campaignDurationDays === 99999 ? null : new Date(Date.now() + campaignDurationDays * 24 * 60 * 60 * 1000),
         location: {
           areaName: normalizedArea,
           pinCode: pinCode.trim() || user.location?.pinCode || null,
@@ -368,6 +407,114 @@ export default function CreatePost() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Post Duration / Validity Option */}
+        <div className="bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 space-y-3">
+          <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block flex items-center gap-1.5">
+            <span>⏳ Post Active Duration / Validity (किती दिवस दाखवायचे?)</span>
+          </label>
+          <select
+            value={campaignDurationDays}
+            onChange={(e) => setCampaignDurationDays(Number(e.target.value))}
+            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold outline-none focus:ring-1 ring-blue-500 text-gray-800"
+          >
+            <option value={1}>1 Day (१ दिवस - Short term alert/update)</option>
+            <option value={3}>3 Days (३ दिवस)</option>
+            <option value={7}>7 Days (१ आठवडा - Standard)</option>
+            <option value={15}>15 Days (१५ दिवस)</option>
+            <option value={30}>30 Days (१ महिना)</option>
+            <option value={99999}>Unlimited / No Expiry (नेहमीसाठी)</option>
+          </select>
+          <p className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">
+             This post will automatically expire and be hidden from the feed after the chosen active period.
+          </p>
+        </div>
+
+        {/* Toggle Sponsorship Ad */}
+        <div className="bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h4 className="text-xs font-black uppercase tracking-widest text-[#0D1B2A] flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" /> Promote as Sponsored Ad
+              </h4>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Boost visibility of this post inside the feeds</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSponsored(!isSponsored)}
+              className={`w-12 h-6 rounded-full relative transition-colors ${isSponsored ? 'bg-indigo-600' : 'bg-gray-100'}`}
+            >
+              <motion.div
+                animate={{ x: isSponsored ? 26 : 2 }}
+                className="absolute top-1 w-4 h-4 bg-white rounded-full pro-shadow"
+              />
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {isSponsored && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden pt-4 space-y-4 border-t border-gray-100"
+              >
+                {/* UPI campaign details */}
+                <div className="bg-slate-900 text-white rounded-[24px] p-5 space-y-3 relative overflow-hidden">
+                  <div className="relative z-10 space-y-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Campaign Booking Payment</span>
+                    <p className="text-[10px] text-slate-300 uppercase tracking-widest leading-relaxed">
+                      Make an upfront payment of <b className="text-white">₹99</b> directory activation fee via UPI ID to launch this sponsored post:
+                    </p>
+                    
+                    <div className="flex items-center justify-between border border-white/10 bg-white/5 rounded-xl p-3 mt-2">
+                      <code className="text-indigo-200 font-mono text-[10px] font-bold">{ownerConfig.upiId}</code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(ownerConfig.upiId);
+                          setCopiedUpi(true);
+                          setTimeout(() => setCopiedUpi(false), 2000);
+                        }}
+                        className="text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest"
+                      >
+                        {copiedUpi ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 text-[9px] font-bold text-indigo-300 uppercase tracking-widest">
+                      <Phone className="w-3.5 h-3.5" /> Support/WhatsApp: {ownerConfig.phone}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Linked Campaign Info */}
+                <div className="bg-indigo-50/50 p-4 border border-indigo-100 rounded-[24px] space-y-1">
+                  <span className="text-[9px] font-black uppercase text-indigo-700 tracking-widest block">Selected Campaign Duration</span>
+                  <p className="text-[11px] font-bold text-indigo-950">
+                    {campaignDurationDays === 99999 ? '🚨 Please select a limited active period (1-30 days) above.' : `${campaignDurationDays} Days Boost Campaign (selected above)`}
+                  </p>
+                </div>
+
+                {/* UTR reference number input */}
+                <div className="bg-gray-50 p-4 border border-gray-100 rounded-[24px] space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Enter Payment Transaction ID (UTR / Ref No.)</label>
+                  <input
+                    required={isSponsored}
+                    type="text"
+                    value={paymentTxId}
+                    onChange={(e) => setPaymentTxId(e.target.value)}
+                    placeholder="e.g. 415302914758 or TXN10293"
+                    className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold outline-none focus:ring-1 ring-indigo-500 uppercase font-mono tracking-wider text-gray-800"
+                  />
+                  <p className="text-[9px] font-bold text-amber-600 uppercase tracking-tight leading-relaxed">
+                    * Our administrator team will review and verify this transaction. Your post will stay visible as "Awaiting Verification" to you, but will only broadcast publicly once approved by Aryan!
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Media Preview */}
         <AnimatePresence>

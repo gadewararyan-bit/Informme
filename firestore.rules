@@ -144,5 +144,10 @@ service cloud.firestore {
       );
       allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
     }
+
+    match /system_config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

@@ -42,6 +42,26 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
                   (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
                   (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
 
+  const isExpired = (() => {
+    if (!post.expiresAt) return false;
+    const expiry = post.expiresAt.toDate ? post.expiresAt.toDate() : new Date(post.expiresAt);
+    return expiry.getTime() < Date.now();
+  })();
+
+  const isMyOwn = user && post.authorId === user.uid;
+
+  const getDaysRemaining = () => {
+    if (!post.expiresAt) return null;
+    const expiry = post.expiresAt.toDate ? post.expiresAt.toDate() : new Date(post.expiresAt);
+    const diff = expiry.getTime() - Date.now();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
+  };
+
+  if (isExpired && !isMyOwn && !isAdmin) {
+    return null;
+  }
+
   useEffect(() => {
     // Engagement reward logic: users earn 0.1 point per post viewed
     if (user && !hasEngaged && !isAdmin) {
@@ -298,6 +318,31 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
         </div>
       )}
 
+      {post.isSponsored && (
+        <div className="bg-indigo-950 text-white px-6 py-2.5 flex items-center justify-between border-b border-indigo-900/40">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 text-indigo-300">
+            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
+            Sponsored Local Ad
+          </span>
+          <div className="flex items-center gap-2">
+            {isExpired ? (
+              <span className="text-[9px] font-black bg-rose-600 text-white px-2 py-0.5 rounded uppercase tracking-widest border border-rose-500">
+                EXPIRED AD
+              </span>
+            ) : post.expiresAt ? (
+              <span className="text-[9px] font-black bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded uppercase tracking-wider">
+                ⌛ {getDaysRemaining()} Days Left
+              </span>
+            ) : null}
+            {post.paymentStatus !== 'verified' && (
+              <span className="text-[9px] font-black bg-amber-500 text-gray-950 px-2 py-0.5 rounded uppercase tracking-widest">
+                Pending Verification
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Post Header */}
       <div className="p-6 pb-4">
         <div className="flex items-center justify-between mb-4">
@@ -330,6 +375,11 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
                    <div className="px-2 py-0.5 bg-gray-100 rounded-full text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                      {post.type}
                    </div>
+                )}
+                {post.expiresAt && !post.isSponsored && (
+                  <div className="bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span>⌛ {getDaysRemaining()} Days Left</span>
+                  </div>
                 )}
               </div>
             </div>

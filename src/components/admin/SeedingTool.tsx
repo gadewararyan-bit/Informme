@@ -213,6 +213,11 @@ export default function SeedingTool() {
 
   const seedData = async (count: number) => {
     if (!auth.currentUser) return;
+    const city = user?.location?.areaName || 'Mumbai';
+    const pin = user?.location?.pinCode || '400001';
+    const latVal = user?.location?.lat || 18.9226;
+    const lngVal = user?.location?.lng || 72.8333;
+
     setTotal(count);
     setStatus('SEEDING');
     setProgress(0);
@@ -221,7 +226,6 @@ export default function SeedingTool() {
     
     // Generate posts
     for (let i = 0; i < count; i++) {
-      const city = INDIAN_CITIES[Math.floor(Math.random() * INDIAN_CITIES.length)];
       const typeRoll = Math.random();
       
       // Randomly stagger the creation time over the last 30 days
@@ -232,11 +236,11 @@ export default function SeedingTool() {
         authorId: auth.currentUser.uid,
         authorName: auth.currentUser.displayName || 'System Admin',
         authorPhoto: auth.currentUser.photoURL || '',
-        language: 'en',
+        language: user?.language || 'en',
         location: {
           areaName: city,
-          pinCode: (100000 + Math.floor(Math.random() * 800000)).toString(),
-          coordinates: { lat: 20 + Math.random() * 5, lng: 78 + Math.random() * 5 }
+          pinCode: pin,
+          coordinates: { lat: latVal, lng: lngVal }
         },
         likes: [],
         commentCount: 0,

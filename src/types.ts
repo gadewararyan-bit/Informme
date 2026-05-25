@@ -62,6 +62,12 @@ export interface Post {
   };
   // Alert specific
   isUrgent?: boolean;
+  // Sponsored specific
+  isSponsored?: boolean;
+  paymentTxId?: string;
+  paymentStatus?: 'pending' | 'verified' | 'failed';
+  campaignDurationDays?: number;
+  expiresAt?: any;
 }
 
 export interface Comment {
@@ -118,4 +124,6 @@ export interface Deal {
   selfReportedProfit?: number; 
   payoutStatus?: 'pending' | 'partially_paid' | 'fully_paid';
   adminVerifiedAmount?: number;
+  paymentTxId?: string;
+  isApproved?: boolean;
 }

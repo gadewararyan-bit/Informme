@@ -44,13 +44,28 @@ export default function OwnerPortal() {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'moderation' | 'content' | 'seeding' | 'royalties'>('overview');
 
   // Aryan's Payment Configuration States
-  const [upiId, setUpiId] = useState(() => localStorage.getItem('owner_upi_id') || 'aryangadewar@okaxis');
-  const [bankDetails, setBankDetails] = useState(() => localStorage.getItem('owner_bank_details') || 'Aryan Gadewar, State Bank of India, Acc: 30491029301, IFSC: SBIN0001234');
+  const [upiId, setUpiId] = useState(() => localStorage.getItem('owner_upi_id') || '8600869341@okaxis');
+  const [phone, setPhone] = useState(() => localStorage.getItem('owner_phone') || '+918600869341');
 
-  const savePayoutConfig = () => {
-    localStorage.setItem('owner_upi_id', upiId);
-    localStorage.setItem('owner_bank_details', bankDetails);
-    alert("Aryan's Payout accounts successfully linked & saved!");
+  const savePayoutConfig = async () => {
+    try {
+      const { setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'system_config', 'owner_details'), {
+        upiId: upiId.trim(),
+        phone: phone.trim(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      localStorage.setItem('owner_upi_id', upiId.trim());
+      localStorage.setItem('owner_phone', phone.trim());
+      alert("Aryan's Contact Details & Payout configuration successfully saved globally!");
+    } catch (err: any) {
+      console.error("Error saving global config:", err);
+      // Fallback to local storage if database permission / rules are pending
+      localStorage.setItem('owner_upi_id', upiId.trim());
+      localStorage.setItem('owner_phone', phone.trim());
+      alert("Saved locally! (Database sync skipped: " + err.message + ")");
+    }
   };
 
   // Metrics
@@ -93,11 +108,20 @@ export default function OwnerPortal() {
       setLoading(false);
     });
 
+    const unsubConfig = onSnapshot(doc(db, 'system_config', 'owner_details'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.upiId) setUpiId(data.upiId);
+        if (data.phone) setPhone(data.phone);
+      }
+    });
+
     return () => {
       unsubUsers();
       unsubReports();
       unsubAllPosts();
       unsubDeals();
+      unsubConfig();
     };
   }, [isAdmin]);
 
@@ -115,6 +139,28 @@ export default function OwnerPortal() {
     } catch (err) {
       console.error("Error updating payout status:", err);
       alert("Unable to write settlement status block to Firestore.");
+    }
+  };
+
+  const handleToggleDealApproval = async (dealId: string, currentApproved: boolean) => {
+    try {
+      await updateDoc(doc(db, 'deals', dealId), {
+        isApproved: !currentApproved
+      });
+    } catch (err) {
+      console.error("Error toggling deal approval:", err);
+      alert("Failed to update deal status.");
+    }
+  };
+
+  const handleTogglePostSponsorStatus = async (postId: string, currentStatus: string | null) => {
+    try {
+      await updateDoc(doc(db, 'posts', postId), {
+        paymentStatus: currentStatus === 'verified' ? 'pending' : 'verified'
+      });
+    } catch (err) {
+      console.error("Error toggling sponsor status:", err);
+      alert("Failed to update sponsor status.");
     }
   };
 
@@ -313,11 +359,32 @@ export default function OwnerPortal() {
                              </div>
                           </td>
                           <td className="px-8 py-6">
-                             {post.reports && post.reports.length > 0 ? (
-                               <span className="bg-red-50 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-red-100">Flagged</span>
-                             ) : (
-                               <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">Clean</span>
-                             )}
+                             <div className="flex flex-col gap-1.5 items-start">
+                                {post.reports && post.reports.length > 0 ? (
+                                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-red-100">Flagged</span>
+                                ) : (
+                                  <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">Clean</span>
+                                )}
+
+                                {post.isSponsored && (
+                                  <div className="mt-1 flex flex-col gap-1 items-start">
+                                    <span className="bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">🚀 Sponsored Ad</span>
+                                    <div className="text-[8px] font-mono font-bold text-gray-400 bg-gray-50 p-1 rounded max-w-[140px] truncate" title={post.paymentTxId}>
+                                      Ref: {post.paymentTxId}
+                                    </div>
+                                    <button
+                                      onClick={() => handleTogglePostSponsorStatus(post.id, post.paymentStatus)}
+                                      className={`px-2 py-1 text-[8px] font-black uppercase rounded tracking-wider cursor-pointer transition-all ${
+                                        post.paymentStatus === 'verified'
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-amber-400 text-gray-950 hover:bg-emerald-600 hover:text-white'
+                                      }`}
+                                    >
+                                      {post.paymentStatus === 'verified' ? '✓ VERIFIED' : '⚠ VERIFY UPI'}
+                                    </button>
+                                  </div>
+                                )}
+                             </div>
                           </td>
                           <td className="px-8 py-6">
                              <button 
@@ -395,19 +462,22 @@ export default function OwnerPortal() {
                              type="text"
                              value={upiId}
                              onChange={(e) => setUpiId(e.target.value)}
-                             placeholder="aryangadewar@okaxis"
+                             placeholder="8600869341@okaxis"
                              className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none"
                            />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-[9px] font-black uppercase text-slate-400">Owner Bank Transfer Details</label>
-                           <textarea
-                             rows={3}
-                             value={bankDetails}
-                             onChange={(e) => setBankDetails(e.target.value)}
-                             placeholder="Aryan Gadewar, SBI Acc..."
-                             className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-4 text-xs font-medium focus:ring-1 ring-indigo-500 outline-none resize-none"
+                           <label className="text-[9px] font-black uppercase text-slate-400">Owner Contact Phone (WhatsApp & Partner Inquiries)</label>
+                           <input
+                             type="text"
+                             value={phone}
+                             onChange={(e) => setPhone(e.target.value)}
+                             placeholder="+918600869341"
+                             className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 ring-indigo-500 outline-none"
                            />
+                        </div>
+                        <div className="space-y-1">
+
                         </div>
                         <button
                           onClick={savePayoutConfig}
@@ -509,6 +579,21 @@ export default function OwnerPortal() {
                                                >
                                                   <Phone className="w-3 h-3" /> Chat: {deal.signerPhone}
                                                </a>
+                                            )}
+                                            {deal.paymentTxId && (
+                                               <div className="mt-2 text-[9px] font-mono text-gray-500 bg-gray-50 p-1.5 rounded-xl flex flex-col gap-1 items-start border border-gray-100 max-w-[170px]">
+                                                  <span className="font-extrabold text-[#0D1B2A] truncate w-full">UPI Ref: {deal.paymentTxId}</span>
+                                                  <button
+                                                    onClick={() => handleToggleDealApproval(deal.id, !!deal.isApproved)}
+                                                    className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-wider transition-all select-none cursor-pointer ${
+                                                      deal.isApproved
+                                                        ? 'bg-emerald-600 text-white hover:bg-red-600'
+                                                        : 'bg-amber-400 text-gray-950 hover:bg-emerald-600 hover:text-white'
+                                                    }`}
+                                                  >
+                                                    {deal.isApproved ? '✓ LISTING ACTIVE' : '⚠ APPROVE UPI LISTING'}
+                                                  </button>
+                                               </div>
                                             )}
                                          </div>
                                       </td>
