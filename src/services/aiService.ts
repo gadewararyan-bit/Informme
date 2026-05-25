@@ -90,16 +90,30 @@ function safeJsonParse(text: string | undefined | null) {
     // Try to extract JSON from block
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
+      const rawJson = jsonMatch[0];
       try {
-        // Remove common malformations like trailing commas or non-quoted keys
-        let fixedJson = jsonMatch[0]
-          .replace(/,\s*\}/g, '}') // Trailing commas in objects
-          .replace(/,\s*\]/g, ']') // Trailing commas in arrays
-          .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":'); // Ensure keys are double-quoted
-        
-        return JSON.parse(fixedJson);
-      } catch (innerError) {
-        console.error("Deep JSON recovery failed:", innerError);
+        // First try to parse the exact matched JSON block directly as-is (e.g. from ```json block)
+        return JSON.parse(rawJson);
+      } catch (directError) {
+        try {
+          // Fallback to fixing minor issues like trailing commas
+          let fixedJson = rawJson
+            .replace(/,\s*\}/g, '}') // Trailing commas in objects
+            .replace(/,\s*\]/g, ']'); // Trailing commas in arrays
+          
+          return JSON.parse(fixedJson);
+        } catch (innerError) {
+          // If all else fails, try the aggressive quote fix as absolute last resort
+          try {
+            let desperateJson = rawJson
+              .replace(/,\s*\}/g, '}')
+              .replace(/,\s*\]/g, ']')
+              .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":');
+            return JSON.parse(desperateJson);
+          } catch (mostDesperateError) {
+            console.error("Deep JSON recovery failed:", mostDesperateError);
+          }
+        }
       }
     }
     return null;

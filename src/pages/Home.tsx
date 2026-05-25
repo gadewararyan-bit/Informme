@@ -5,7 +5,7 @@ import { Post } from '../types';
 import PostCard from '../components/feed/PostCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles, Zap } from 'lucide-react';
+import { MapPin, Info, Activity, Newspaper, Calendar, Cloud, ChevronRight, X, Tag, IndianRupee, ShieldAlert, Users, MessageSquare, ArrowLeft, ArrowRight, Star, ShoppingBag, Sparkles, Zap, Search } from 'lucide-react';
 import { getLocalInfo } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,7 +14,7 @@ import { ADMIN_EMAILS } from '../constants';
 
 export default function Home() {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const isAdmin = !!user?.isAdmin || 
                   (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
@@ -26,6 +26,32 @@ export default function Home() {
   const [localData, setLocalData] = useState<any>(null);
   const [loadingLocal, setLoadingLocal] = useState(false);
   const [selectedHeadline, setSelectedHeadline] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const filteredPosts = posts.filter(post => {
+    // Category filtering
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'news') {
+        const type = post.type || 'news';
+        if (type !== 'news' && type !== 'general') return false;
+      } else {
+        if (post.type !== selectedCategory) return false;
+      }
+    }
+
+    // Search query filtering
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const contentMatch = post.content?.toLowerCase().includes(q) || false;
+      const authorMatch = post.authorName?.toLowerCase().includes(q) || false;
+      const priceMatch = post.priceData?.item?.toLowerCase().includes(q) || false;
+      const venueMatch = post.eventDetails?.venue?.toLowerCase().includes(q) || false;
+      return contentMatch || authorMatch || priceMatch || venueMatch;
+    }
+
+    return true;
+  });
 
   const categoryPosts = {
     news: posts.filter(p => !p.type || p.type === 'news' || p.type === 'general'),
@@ -327,11 +353,74 @@ export default function Home() {
 
         {/* Regular Global Feed Below */}
         <section className="pt-12 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-black italic tracking-tighter text-gray-900 uppercase">Latest Feed</h2>
-            <div className="flex p-1 bg-gray-100 rounded-2xl gap-1">
-               <button className="px-5 py-2 bg-white rounded-xl text-xs font-bold text-blue-600 pro-shadow">LIVE</button>
-               <button onClick={() => navigate('/pulse')} className="px-5 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase">Network Pulse</button>
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-black italic tracking-tighter text-gray-900 uppercase">
+                {language === 'mr' ? 'लेटेस्ट फीड' : language === 'hi' ? 'ताज़ा फीड' : 'Latest Feed'}
+              </h2>
+              <div className="flex p-1 bg-gray-100 rounded-2xl gap-1 shrink-0">
+                 <button className="px-5 py-2 bg-white rounded-xl text-xs font-bold text-blue-600 pro-shadow">LIVE</button>
+                 <button onClick={() => navigate('/pulse')} className="px-5 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase">Network Pulse</button>
+              </div>
+            </div>
+
+            {/* Premium Search and Filtering Controls Row */}
+            <div className="w-full bg-white p-5 rounded-[32px] border border-gray-100 pro-shadow flex flex-col md:flex-row gap-4 items-center justify-between">
+              {/* Search Bar */}
+              <div className="relative w-full md:max-w-md">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+                  <Search className="w-4 h-4" />
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={
+                    language === 'mr' 
+                      ? "बातम्या, कार्यक्रम, बाजारभाव किंवा शब्द शोधा..." 
+                      : language === 'hi' 
+                        ? "समाचार, कार्यक्रम, बाजार भाव या शब्द खोजें..." 
+                        : "Search news, events, market, or keywords..."
+                  }
+                  className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-50 rounded-2xl text-xs font-bold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all uppercase tracking-wider"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Horizontal Category Filtering */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full md:w-auto py-1 scroll-smooth">
+                {[
+                  { id: 'all', en: 'All Feed', mr: 'सर्व फीड', hi: 'सभी फीड' },
+                  { id: 'news', en: 'News', mr: 'बातम्या', hi: 'समाचार' },
+                  { id: 'event', en: 'Events', mr: 'कार्यक्रम', hi: 'आयोजन' },
+                  { id: 'alert', en: 'Alerts', mr: 'इशारे', hi: 'चेतावनियाँ' },
+                  { id: 'market', en: 'Market', mr: 'बाजार भाव', hi: 'बाज़ार भाव' },
+                  { id: 'weather', en: 'Weather', mr: 'हवामान', hi: 'मौसम' }
+                ].map((cat) => {
+                  const isActive = selectedCategory === cat.id;
+                  const label = language === 'mr' ? cat.mr : language === 'hi' ? cat.hi : cat.en;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`flex-shrink-0 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${
+                        isActive
+                          ? 'bg-gray-900 border-gray-900 text-white pro-shadow scale-102 font-black'
+                          : 'bg-gray-50 border-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -340,8 +429,8 @@ export default function Home() {
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-64 bg-white rounded-[40px] animate-pulse pro-shadow" />
               ))
-            ) : posts.length > 0 ? (
-              posts.slice(0, 100).map((post, index) => (
+            ) : filteredPosts.length > 0 ? (
+              filteredPosts.slice(0, 100).map((post, index) => (
                 <div key={post.id} className="contents">
                   <PostCard post={post} />
                   {index === 2 && (
@@ -358,12 +447,20 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <div className="col-span-full py-20 px-6 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100">
-                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 pro-shadow">
-                  <Activity className="w-10 h-10 text-indigo-400" />
+              <div className="col-span-full py-20 px-6 text-center bg-white rounded-[40px] border border-gray-100 pro-shadow">
+                <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 pr-0.5">
+                  <Search className="w-10 h-10 text-indigo-500" />
                 </div>
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900 mb-2">No Posts Yet</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No news found in <span className="text-indigo-600">{user?.location?.areaName || 'your area'}</span> yet. Be the first to share something!</p>
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-gray-900 mb-2">
+                  {language === 'mr' ? 'काहीही सापडले नाही' : language === 'hi' ? 'कुछ नहीं मिला' : 'No Details Found'}
+                </h3>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest max-w-sm mx-auto leading-relaxed">
+                  {language === 'mr' 
+                    ? "तुमच्या शोध किंवा निवडलेल्या कैटेगरीशी जुळणारे कोणतेही पोस्ट सापडले नाही. कृपया पुन्हा प्रयत्न करा!" 
+                    : language === 'hi'
+                      ? "आपकी खोज या चयनित वर्ग से कोई पोस्ट मेल नहीं खाती। कृपया फिर से प्रयास करें!"
+                      : "No posts found matching your search. Clear your filters or try another query!"}
+                </p>
               </div>
             )}
           </div>
