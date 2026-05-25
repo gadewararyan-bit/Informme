@@ -16,7 +16,9 @@ export default function Home() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isAdmin = !!user?.isAdmin || (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false);
+  const isAdmin = !!user?.isAdmin || 
+                  (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
+                  (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [dealsCount, setDealsCount] = useState(0);
   const [userCount, setUserCount] = useState(0);
@@ -76,7 +78,7 @@ export default function Home() {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (parsed.timestamp && (Date.now() - parsed.timestamp < 4 * 60 * 60 * 1000)) {
+          if (parsed.timestamp && (Date.now() - parsed.timestamp < 1 * 60 * 60 * 1000)) {
             setLocalData(parsed.data);
             isFresh = true;
           } else if (parsed.weather) {

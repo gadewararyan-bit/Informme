@@ -15,7 +15,9 @@ export default function AdminFooter() {
   });
   const [isVisible, setIsVisible] = useState(false);
 
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase());
+  const isAdmin = !!user?.isAdmin || 
+                  (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
+                  (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
 
   useEffect(() => {
     if (!isAdmin) return;

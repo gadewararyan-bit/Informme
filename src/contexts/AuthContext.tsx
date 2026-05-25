@@ -28,10 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
-        const isAdmin = firebaseUser.email && ADMIN_EMAILS.includes(firebaseUser.email.trim().toLowerCase());
         
-        console.log('Auth State Change:', { email: firebaseUser.email, isAdmin });
-
         // Use onSnapshot for real-time updates
         unsubscribeDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
@@ -40,7 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!data.email && firebaseUser.email) {
               data.email = firebaseUser.email;
             }
-            setUser({ ...data, isAdmin: !!isAdmin });
+            const isEmailAdmin = (data.email && ADMIN_EMAILS.includes(data.email.trim().toLowerCase())) || 
+                                 (firebaseUser.email && ADMIN_EMAILS.includes(firebaseUser.email.trim().toLowerCase()));
+            const isNameAdmin = (data.displayName && data.displayName.toLowerCase().trim() === 'aryan gadewar') ||
+                                (firebaseUser.displayName && firebaseUser.displayName.toLowerCase().trim() === 'aryan gadewar');
+            
+            setUser({ ...data, isAdmin: !!(isEmailAdmin || isNameAdmin) });
             setLoading(false);
           } else {
             // New user setup - only if document doesn't exist

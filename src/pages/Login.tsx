@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Info, Mail, AlertCircle, MapPin } from 'lucide-react';
 import { signInWithPopup, googleProvider, auth, db } from '../services/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +31,28 @@ export default function Login() {
       };
 
       if (!userDoc.exists()) {
+        let desiredName = firebaseUser.displayName || 'User';
+        
+        // We fetch all users to safely check for case-insensitive duplicate display names
+        try {
+          const q = query(collection(db, 'users'));
+          const querySnapshot = await getDocs(q);
+          const nameExists = querySnapshot.docs.some(docSnap => {
+            const data = docSnap.data();
+            return data.displayName?.toLowerCase()?.trim() === desiredName.toLowerCase().trim();
+          });
+          
+          if (nameExists) {
+            desiredName = `${desiredName}#${Math.floor(100 + Math.random() * 900)}`;
+          }
+        } catch (e) {
+          console.error("Failed to check unique name during signup, continuing:", e);
+        }
+
         const newUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || '',
-          displayName: firebaseUser.displayName || 'User',
+          displayName: desiredName,
           photoURL: firebaseUser.photoURL || '',
           createdAt: new Date().toISOString(),
           location: locationData,

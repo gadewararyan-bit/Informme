@@ -21,7 +21,9 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'services'>('posts');
 
-  const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false;
+  const isAdmin = !!user?.isAdmin || 
+                  (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
+                  (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
 
   useEffect(() => {
     if (!user) return;

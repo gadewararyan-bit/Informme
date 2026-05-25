@@ -71,7 +71,7 @@ function AppContent() {
         <Route path="/" element={user ? <Home /> : <Home />} />
         <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
-        <Route path="/owner-portal" element={(user && (user.isAdmin || (user.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase())))) ? <OwnerPortal /> : <Navigate to="/" />} />
+        <Route path="/owner-portal" element={(user && (user.isAdmin || (user.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase())) || (user.displayName && user.displayName.toLowerCase().trim() === 'aryan gadewar'))) ? <OwnerPortal /> : <Navigate to="/" />} />
         <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
         <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/add" element={user ? <CreatePost /> : <Navigate to="/login" />} />

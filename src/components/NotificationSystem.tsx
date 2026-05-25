@@ -21,10 +21,19 @@ export default function NotificationSystem() {
             console.log('Notification permission granted.');
             
             // Get token
-            // TODO: Replace with real VAPID key from Firebase Console
-            const token = await getToken(messaging, {
-              vapidKey: 'BPrH-vVq6w9_Hw_K6-gXwR_R_Q_P_Z_Y_X_W_V_U_T_S_R_Q_P_O_N_M_L_K_J_I_H_G_F_E_D_C_B_A' 
-            });
+            const vapidKey = (import.meta as any).env?.VITE_FCM_VAPID_KEY || 'BPrH-vVq6w9_Hw_K6-gXwR_R_Q_P_Z_Y_X_W_V_U_T_S_R_Q_P_O_N_M_L_K_J_I_H_G_F_E_D_C_B_A';
+            const isPlaceholder = vapidKey === 'BPrH-vVq6w9_Hw_K6-gXwR_R_Q_P_Z_Y_X_W_V_U_T_S_R_Q_P_O_N_M_L_K_J_I_H_G_F_E_D_C_B_A' || !/^[A-Za-z0-9\-_]{50,}$/.test(vapidKey);
+
+            if (isPlaceholder) {
+              console.warn(
+                'FCM Info: VAPID key is a placeholder or invalid. Push notifications are disabled. ' +
+                'To enable real-time push notifications, configure VITE_FCM_VAPID_KEY with a valid Key Pair ' +
+                'from Firebase Console > Project Settings > Cloud Messaging > Web Push Certificates.'
+              );
+              return;
+            }
+
+            const token = await getToken(messaging, { vapidKey });
 
             if (token) {
               console.log('FCM Token:', token);

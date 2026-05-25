@@ -108,24 +108,27 @@ function safeJsonParse(text: string | undefined | null) {
 
 export async function getLocalInfo(area: string, language: string) {
   const cacheKey = `local_info_${area}_${language}`;
-  const ttl = 4 * 60 * 60 * 1000; // 4 hours
+  const ttl = 1 * 60 * 60 * 1000; // 1 hour (frequent updates for true actual weather)
 
   const cachedResult = getCachedData(cacheKey, ttl);
   if (cachedResult) return cachedResult;
 
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `User in ${area}, India. Preferred language: ${language}.
-      Return CURRENT local weather, top 2-3 news headlines (last 24h), and 3 upcoming events.
+      model: "gemini-3.5-flash",
+      contents: `You are retrieval assistant for InformMe community app.
+      Return ACCURATE, ACTUAL, REAL-LIFE and CURRENT local weather (temperature, condition, brief description), top 2-3 genuine news headlines (last 24h), and 3 upcoming local events for: ${area}, India. Preferred language: ${language}.
       
-      Format strictly as JSON:
+      CRITICAL REQUIREMENT FOR 100% ACCURACY:
+      You MUST execute a Google Search query specifically for "current weather temperature status in ${area}, India today" to ensure the temperature, condition, and status you report are 100% correct, and NOT fictional. Do NOT guess or hallucinate.
+      
+      Format strictly as JSON matching this schema:
       {
-        "weather": { "temp": "32°C", "condition": "Sunny", "description": "Hot day" },
+        "weather": { "temp": "e.g. 32°C", "condition": "e.g. Sunny", "description": "e.g. Hot day" },
         "news": [{ "title": "Headline", "summary": "Brief summary" }],
         "events": [{ "title": "Name", "date": "Date", "location": "Venue" }]
       }
-      Translate all values to ${language}.`,
+      Translate all readable values to ${language}.`,
       config: {
         responseMimeType: "application/json",
         tools: [
@@ -159,7 +162,7 @@ export async function translateContent(text: string, targetLanguage: string) {
 
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: `Translate the following text to ${targetLanguage}. 
       Only return the translated text without any explanations or extra characters.
       
@@ -183,7 +186,7 @@ export async function translateContent(text: string, targetLanguage: string) {
 export async function validatePostContent(text: string): Promise<{ isSafe: boolean; reason?: string }> {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: `You are a local community moderator for InformMe. Analyze this post content for:
       1. Fake news or obvious misinformation (medical, political, social).
       2. Spam or commercial repetitive junk.
@@ -206,7 +209,7 @@ export async function validatePostContent(text: string): Promise<{ isSafe: boole
 export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', language: string) {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: `You are a professional health and fitness coach. Provide advice for someone looking for ${goal}. 
       The response must be in ${language}.
       
@@ -236,7 +239,7 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
 
 export async function chatWithAIStream(messages: { role: 'user' | 'model', content: string }[], onChunk: (text: string) => void, language: string = 'en', isPremium: boolean = false) {
   try {
-    const modelTier = "gemini-3-flash-preview"; // Use stable flash model
+    const modelTier = "gemini-3.5-flash"; // Use stable flash model
     let systemInstruction = INFORMME_AI_PROMPT + `\n\nPreferred Language: ${language}. You MUST respond strictly in the language selected by the user (${language}), or in the language they used to query you. Do not force Marathi if they query or select a different language. Match their language perfectly while respecting all the core tone and safety guidelines!`;
 
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || "";
@@ -284,7 +287,7 @@ export async function chatWithAIStream(messages: { role: 'user' | 'model', conte
 export async function getLessonContent(level: string, category: string, targetLanguage: string, instructionLanguage: string = 'English') {
   try {
     const response = await withRetry(() => ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: `Generate a short language lesson for ${level} level in ${category}. 
       The target language is ${targetLanguage}.
       The instructions and explanations should be in ${instructionLanguage}.
@@ -310,7 +313,7 @@ export async function getLessonContent(level: string, category: string, targetLa
 
 export async function chatWithAI(messages: { role: 'user' | 'model', content: string }[], language: string = 'en', isPremium: boolean = false) {
   try {
-    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
+    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
     let systemInstruction = INFORMME_AI_PROMPT + `\n\nPreferred Language: ${language}. You MUST respond strictly in the language selected by the user (${language}), or in the language they used to query you. Do not force Marathi if they query or select a different language. Match their language perfectly while respecting all the core tone and safety guidelines!`;
 
     // Add specific English Learner context if the user is asking about language

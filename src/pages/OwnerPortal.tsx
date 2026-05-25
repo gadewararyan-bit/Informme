@@ -32,7 +32,9 @@ export default function OwnerPortal() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isAdmin = !!user?.isAdmin || (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false);
+  const isAdmin = !!user?.isAdmin || 
+                  (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
+                  (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
   
   const [users, setUsers] = useState<User[]>([]);
   const [reportedPosts, setReportedPosts] = useState<Post[]>([]);

@@ -6,5 +6,11 @@ export const APP_CONFIG = {
   year: '2024'
 };
 
-export const ADMIN_EMAILS = ['gadewarkalpna@gmail.com'];
+export const ADMIN_EMAILS = [
+  'gadewarkalpna@gmail.com',
+  'gadewararyan@gmail.com',
+  'aryangadewar@gmail.com',
+  'aryangadewar2@gmail.com',
+  'aryan.gadewar@gmail.com'
+];
 export const ADMIN_EMAIL = 'gadewarkalpna@gmail.com';

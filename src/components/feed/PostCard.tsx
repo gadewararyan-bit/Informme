@@ -38,7 +38,9 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
     setLocalLikes(post.likes);
   }, [post.likes]);
 
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase());
+  const isAdmin = !!user?.isAdmin || 
+                  (user?.email ? ADMIN_EMAILS.includes(user.email.trim().toLowerCase()) : false) || 
+                  (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
 
   useEffect(() => {
     // Engagement reward logic: users earn 0.1 point per post viewed
