@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { db, auth } from '../../services/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, Timestamp, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, Timestamp, getDoc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Loader2, Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '../../contexts/TranslationContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -305,6 +305,84 @@ export default function SeedingTool() {
     }
   };
 
+  const [purgingPosts, setPurgingPosts] = useState(false);
+  const [purgingDeals, setPurgingDeals] = useState(false);
+  const [confirmPostPurge, setConfirmPostPurge] = useState(false);
+  const [confirmDealPurge, setConfirmDealPurge] = useState(false);
+  const [purgeFeedback, setPurgeFeedback] = useState<string | null>(null);
+
+  const executePurgePosts = async () => {
+    setPurgingPosts(true);
+    setPurgeFeedback(null);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'posts'));
+      const docs = querySnapshot.docs;
+      const totalDocs = docs.length;
+
+      if (totalDocs > 0) {
+        // Firestore batch max size is 500 operations. We split to chunks of 450.
+        const chunkSize = 450;
+        for (let i = 0; i < totalDocs; i += chunkSize) {
+          const chunk = docs.slice(i, i + chunkSize);
+          const batch = writeBatch(db);
+          chunk.forEach(d => {
+            batch.delete(d.ref);
+          });
+          await batch.commit();
+        }
+      }
+      
+      // reset admin user postCount
+      if (auth.currentUser) {
+        try {
+          await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+            postCount: 0
+          });
+        } catch (e) {
+          console.warn("Could not reset post count of current admin user:", e);
+        }
+      }
+      
+      setPurgeFeedback(`यशस्वीरित्या ${totalDocs} पोस्ट्स पुसल्या गेल्या आहेत! (Successfully deleted ${totalDocs} posts!)`);
+      setConfirmPostPurge(false);
+    } catch (err: any) {
+      console.error("Purging posts error:", err);
+      setPurgeFeedback("Error deleting posts: " + err.message);
+    } finally {
+      setPurgingPosts(false);
+    }
+  };
+
+  const executePurgeDeals = async () => {
+    setPurgingDeals(true);
+    setPurgeFeedback(null);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'deals'));
+      const docs = querySnapshot.docs;
+      const totalDocs = docs.length;
+
+      if (totalDocs > 0) {
+        // Firestore batch max size is 500 operations. We split to chunks of 450.
+        const chunkSize = 450;
+        for (let i = 0; i < totalDocs; i += chunkSize) {
+          const chunk = docs.slice(i, i + chunkSize);
+          const batch = writeBatch(db);
+          chunk.forEach(d => {
+            batch.delete(d.ref);
+          });
+          await batch.commit();
+        }
+      }
+      setPurgeFeedback(`यशस्वीरित्या ${totalDocs} ऑफर्स पुसल्या गेल्या आहेत! (Successfully deleted ${totalDocs} deals!)`);
+      setConfirmDealPurge(false);
+    } catch (err: any) {
+      console.error("Purging deals error:", err);
+      setPurgeFeedback("Error deleting deals: " + err.message);
+    } finally {
+      setPurgingDeals(false);
+    }
+  };
+
   return (
     <div className="bg-indigo-900 text-white p-8 rounded-[40px] pro-shadow border border-indigo-500/20 mb-8 overflow-hidden relative">
       <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -330,12 +408,14 @@ export default function SeedingTool() {
         {status === 'IDLE' && (
           <div className="flex flex-wrap gap-4">
             <button 
+              type="button"
               onClick={() => seedDataForCurrentArea()}
               className="bg-emerald-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 pro-shadow"
             >
               Seed 10 Posts per Section
             </button>
             <button 
+              type="button"
               onClick={() => seedData(100)}
               className="bg-white text-indigo-900 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
@@ -371,6 +451,7 @@ export default function SeedingTool() {
                <p className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-tighter mt-0.5">{progress} Posts successfully integrated into the mainnet.</p>
             </div>
             <button 
+              type="button"
               onClick={() => setStatus('IDLE')}
               className="ml-auto text-[10px] font-black uppercase underline"
             >
@@ -388,6 +469,7 @@ export default function SeedingTool() {
                <p className="text-[10px] font-bold text-red-300/80 uppercase tracking-tighter mt-0.5">Permission disruption detected. Verify Admin token status.</p>
             </div>
             <button 
+              type="button"
               onClick={() => setStatus('IDLE')}
               className="ml-auto text-[10px] font-black uppercase underline"
             >
@@ -395,6 +477,109 @@ export default function SeedingTool() {
             </button>
           </div>
         )}
+
+        {/* DANGER PURGE ZONE FOR OWNER ARYAN */}
+        <div className="mt-12 pt-8 border-t border-indigo-500/30">
+          <h4 className="text-xs font-black uppercase tracking-widest text-red-400 mb-2 flex items-center gap-1.5">
+            🚨 अतिशय महत्त्वाचे / Platform Reset (Owner Action)
+          </h4>
+          <p className="text-[11px] text-indigo-200 leading-relaxed mb-6 font-semibold">
+            जर तुम्हाला सिस्टीममधील सर्व सॅम्पल / AI-व्युत्पन्न पोस्ट्स आणि ऑफर्स काढून टाकायच्या असतील, जेणेकरून तुम्ही फक्त <b>खऱ्या (Real)</b> आणि <b>स्थानिक विश्वसनीय पोस्ट्स</b> दाखवू शकाल, तर खालील बटणे दाबा:
+          </p>
+
+          {purgeFeedback && (
+            <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-2xl flex items-center justify-between">
+              <span>{purgeFeedback}</span>
+              <button 
+                type="button" 
+                onClick={() => setPurgeFeedback(null)} 
+                className="text-[9px] font-black uppercase tracking-wider bg-white/10 px-2.5 py-1 rounded-lg hover:bg-white/20 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Posts Purge Block */}
+            <div className="space-y-3">
+              {confirmPostPurge ? (
+                <div className="bg-red-950/50 border border-red-500/30 p-4 rounded-2xl space-y-3 transition-all">
+                  <p className="text-[11px] font-extrabold text-red-300">
+                    ⚠️ तुम्हाला खात्री आहे का की तुम्हाला सिस्टीममधील सर्व पोस्ट्स डिलिट करायच्या आहेत?
+                  </p>
+                  <p className="text-[10px] text-indigo-200 font-semibold leading-normal">
+                    हे अंतिम आहे! हा डेटा कायमचा नष्ट होईल. (All user posts will be deleted!)
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => executePurgePosts()}
+                      disabled={purgingPosts}
+                      className="bg-red-600 hover:bg-red-700 text-white font-black text-[9px] py-2.5 px-4 rounded-xl uppercase tracking-widest transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {purgingPosts ? 'पुसत आहे...' : 'होय, सर्व पोस्ट्स पुसा (Yes, Delete ALL)'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmPostPurge(false)}
+                      className="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/20 text-indigo-200 font-black text-[9px] py-2.5 px-4 rounded-xl uppercase tracking-widest transition-all cursor-pointer"
+                    >
+                      रद्द करा (Cancel)
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmPostPurge(true)}
+                  className="w-full bg-red-950/40 hover:bg-red-600/80 text-white font-extrabold text-[10px] py-4 px-6 rounded-2xl border border-red-500/30 uppercase tracking-widest transition-all active:scale-95 text-center cursor-pointer"
+                >
+                  🗑️ Delete All Feed Posts (सर्व पोस्ट्स पुसा)
+                </button>
+              )}
+            </div>
+
+            {/* Deals Purge Block */}
+            <div className="space-y-3">
+              {confirmDealPurge ? (
+                <div className="bg-red-950/50 border border-red-500/30 p-4 rounded-2xl space-y-3 transition-all">
+                  <p className="text-[11px] font-extrabold text-red-300">
+                    ⚠️ तुम्हाला खात्री आहे का की तुम्हाला सर्व ऑफर्स/जाहिराती डिलिट करायच्या आहेत?
+                  </p>
+                  <p className="text-[10px] text-indigo-200 font-semibold leading-normal">
+                    हे अंतिम आहे! हा डेटा कायमचा नष्ट होईल. (All local store deals will be deleted!)
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => executePurgeDeals()}
+                      disabled={purgingDeals}
+                      className="bg-red-600 hover:bg-red-700 text-white font-black text-[9px] py-2.5 px-4 rounded-xl uppercase tracking-widest transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {purgingDeals ? 'पुसत आहे...' : 'होय, सर्व ऑफर्स पुसा (Yes, Delete ALL)'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDealPurge(false)}
+                      className="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/20 text-indigo-200 font-black text-[9px] py-2.5 px-4 rounded-xl uppercase tracking-widest transition-all cursor-pointer"
+                    >
+                      रद्द करा (Cancel)
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDealPurge(true)}
+                  className="w-full bg-red-950/40 hover:bg-red-600/80 text-white font-extrabold text-[10px] py-4 px-6 rounded-2xl border border-red-500/30 uppercase tracking-widest transition-all active:scale-95 text-center cursor-pointer"
+                >
+                  🗑️ Delete All Store Deals (सर्व ऑफर्स पुसा)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

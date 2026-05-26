@@ -49,6 +49,8 @@ const PostDeal: React.FC = () => {
 
   const [paymentTxId, setPaymentTxId] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'free_promo'>('upi');
+  const [freePromoDetails, setFreePromoDetails] = useState('');
   const [ownerConfig, setOwnerConfig] = useState({
     upiId: '8600869341@okaxis',
     phone: '+918600869341'
@@ -94,9 +96,16 @@ const PostDeal: React.FC = () => {
       return;
     }
 
-    if (!paymentTxId.trim() || paymentTxId.trim().length < 6) {
-      alert("Please enter a valid upfront listing Payment Transaction ID (at least 6 characters) to activate your deal campaign.");
-      return;
+    if (paymentMethod === 'upi') {
+      if (!paymentTxId.trim() || paymentTxId.trim().length < 6) {
+        alert("Please enter a valid upfront listing Payment Transaction ID (at least 6 characters) to activate your deal campaign.");
+        return;
+      }
+    } else {
+      if (!freePromoDetails.trim() || freePromoDetails.trim().length < 10) {
+        alert("Please explain how you will promote the InformMe app in your shop (at least 10 characters).");
+        return;
+      }
     }
 
     setLoading(true);
@@ -128,7 +137,9 @@ const PostDeal: React.FC = () => {
         selfReportedProfit: totalEstimatedProfit,
         payoutStatus: 'pending',
         adminVerifiedAmount: 0,
-        paymentTxId: paymentTxId.trim()
+        paymentTxId: paymentMethod === 'upi' ? paymentTxId.trim() : 'FREE_PROMOTION_PARTNER',
+        isFreePromotion: paymentMethod === 'free_promo',
+        freePromoDetails: paymentMethod === 'free_promo' ? freePromoDetails.trim() : null
       };
 
       await addDoc(collection(db, 'deals'), dealData);
@@ -390,65 +401,116 @@ const PostDeal: React.FC = () => {
             </div>
           </section>
 
-          {/* Section 5: Upfront Listing Payment */}
+          {/* Section 5: Upfront Listing Payment / Free App Promotion Option */}
           <section className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 bg-amber-50 text-amber-600 rounded-bl-3xl flex items-center gap-1">
+            <div className="absolute top-0 right-0 p-3 bg-indigo-50 text-indigo-600 rounded-bl-3xl flex items-center gap-1">
               <Sparkles className="w-4 h-4" />
-              <span className="text-[9px] font-black uppercase tracking-widest">Required</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">Select Option</span>
             </div>
 
             <div className="flex items-center gap-2 mb-2">
                <Coins className="w-4 h-4 text-[#0D1B2A]" />
-               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#0D1B2A]">Sponsorship Listing Activation</h3>
+               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#0D1B2A]">Campaign Activation Mode</h3>
             </div>
 
-            <p className="text-xs text-gray-500 leading-relaxed font-semibold">
-              To publish your promotional campaign deal in the local feed, an upfront listing activation fee of <b className="text-gray-900">₹99</b> is required. This prevents spam and verifies your shop's authenticity.
-            </p>
+            {/* Tabs to select Activation Method */}
+            <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('upi')}
+                className={`py-3 rounded-xl text-xs font-black uppercase tracking-tight transition-all ${
+                  paymentMethod === 'upi' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                }`}
+              >
+                💳 Pay ₹99 Upfront
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('free_promo')}
+                className={`py-3 rounded-xl text-xs font-black uppercase tracking-tight transition-all ${
+                  paymentMethod === 'free_promo' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-indigo-600'
+                }`}
+              >
+                🤝 Free Promo Partnership
+              </button>
+            </div>
 
-            <div className="bg-slate-900 text-white rounded-[32px] p-6 space-y-4">
-              <div className="space-y-2">
-                <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest block">Direct UPI Activation Address</span>
-                <div className="flex items-center justify-between border border-white/10 bg-white/5 rounded-2xl p-3">
-                  <code className="text-[11px] font-mono font-bold text-indigo-200">{ownerConfig.upiId}</code>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(ownerConfig.upiId);
-                      setCopiedUpi(true);
-                      setTimeout(() => setCopiedUpi(false), 2000);
-                    }}
-                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white cursor-pointer"
-                  >
-                    {copiedUpi ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+            {paymentMethod === 'upi' ? (
+              <div className="space-y-6">
+                <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+                  To publish your promotional campaign deal in the local feed, an upfront listing activation fee of <b className="text-gray-900">₹99</b> is required. This prevents spam and verifies your shop's authenticity.
+                </p>
+
+                <div className="bg-slate-900 text-white rounded-[32px] p-6 space-y-4">
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest block">Direct UPI Activation Address</span>
+                    <div className="flex items-center justify-between border border-white/10 bg-white/5 rounded-2xl p-3">
+                      <code className="text-[11px] font-mono font-bold text-indigo-200">{ownerConfig.upiId}</code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(ownerConfig.upiId);
+                          setCopiedUpi(true);
+                          setTimeout(() => setCopiedUpi(false), 2000);
+                        }}
+                        className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white cursor-pointer"
+                      >
+                        {copiedUpi ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                    <Phone className="w-4 h-4 text-indigo-400" />
+                    <span>Enquiries & Activation Support: <a href={`tel:${ownerConfig.phone}`} className="text-white hover:underline">{ownerConfig.phone}</a></span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase text-gray-400 ml-1 font-sans">Payment Reference Number (12-digit UPI Transaction ID / UTR)</label>
+                   <input
+                     required={paymentMethod === 'upi'}
+                     type="text"
+                     value={paymentTxId}
+                     onChange={(e) => setPaymentTxId(e.target.value)}
+                     placeholder="e.g. 415309251024 or UPI/410293"
+                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-indigo-100 outline-none transition-all uppercase font-mono tracking-wider text-gray-800"
+                   />
+                   <p className="text-[9px] font-semibold text-amber-600 uppercase tracking-widest mt-1">
+                     * After submitting, Aryan will audit the reference with his bank statements for fast deployment approval!
+                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                <Phone className="w-4 h-4 text-indigo-400" />
-                <span>Enquiries & Activation Support: <a href={`tel:${ownerConfig.phone}`} className="text-white hover:underline">{ownerConfig.phone}</a></span>
+            ) : (
+              <div className="space-y-6 bg-indigo-50/20 p-6 rounded-[32px] border border-indigo-100 border-dashed">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  <h4 className="text-xs font-black uppercase text-indigo-900 tracking-wider">🤝 ॲप जाहिरात भागीदारी (App Promotion Deal)</h4>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed font-bold">
+                  तुमच्या ऑफरचे आम्ही ॲपवर <b className="text-indigo-900">मोफत (Free) प्रमोशन</b> करू! याच्या बदल्यात, तुम्हाला तुमच्या दुकानात आमचे ॲप रोज ग्राहकांना दाखवावे लागेल किंवा काउंटरवर क्यूआर कोड/पोस्टर लावून लोकांकडून डाऊनलोड करून घ्यावे लागेल. (App promotion daily in your shop in exchange for Free Promotion)
+                </p>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-indigo-700 ml-1">तुम्ही दुकानात ॲपचे प्रमोशन कसे कराल? (Explain app promotion plan)*</label>
+                  <textarea
+                    required={paymentMethod === 'free_promo'}
+                    rows={3}
+                    value={freePromoDetails}
+                    onChange={(e) => setFreePromoDetails(e.target.value)}
+                    placeholder="उदा. काउंटरवर पोस्टर लावेन, रोज ५० लोकांना ॲप वापरण्यास सांगेन..."
+                    className="w-full bg-white border border-gray-100 rounded-2xl py-3 px-5 text-xs font-bold focus:ring-2 ring-indigo-300 outline-none transition-all"
+                  />
+                  <p className="text-[8px] font-black text-indigo-500 uppercase tracking-wider block font-bold">
+                    * Platform Owner Aryan Gadewar will review your plan and activate your free promotion campaign.
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase text-gray-400 ml-1 font-sans">Payment Reference Number (12-digit UPI Transaction ID / UTR / Ref No.)</label>
-               <input
-                 required
-                 type="text"
-                 value={paymentTxId}
-                 onChange={(e) => setPaymentTxId(e.target.value)}
-                 placeholder="e.g. 415309251024 or UPI/410293"
-                 className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-indigo-100 outline-none transition-all uppercase font-mono tracking-wider text-gray-800"
-               />
-               <p className="text-[9px] font-semibold text-amber-600 uppercase tracking-widest mt-1">
-                 * After submitting, Aryan will audit the reference with his bank statements for fast deployment approval!
-               </p>
-            </div>
+            )}
           </section>
 
           <button

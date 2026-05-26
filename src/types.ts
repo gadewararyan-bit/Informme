@@ -126,4 +126,17 @@ export interface Deal {
   adminVerifiedAmount?: number;
   paymentTxId?: string;
   isApproved?: boolean;
+  isFreePromotion?: boolean;
+  freePromoDetails?: string;
+}
+
+export interface DailyPromoProof {
+  id: string;
+  dealId: string;
+  merchantId: string;
+  merchantName: string;
+  businessName: string;
+  videoUrl: string;
+  uploadedAt: any;
+  remarks?: string;
 }
