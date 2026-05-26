@@ -103,12 +103,15 @@ function safeJsonParse(text: string | undefined | null) {
           
           return JSON.parse(fixedJson);
         } catch (innerError) {
-          // If all else fails, try the aggressive quote fix as absolute last resort
+          // If all else fails, try the aggressive quote fix securely as absolute last resort
           try {
             let desperateJson = rawJson
               .replace(/,\s*\}/g, '}')
               .replace(/,\s*\]/g, ']')
-              .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":');
+              // Quote unquoted keys securely (keys only preceded by opening bracket/brace or comma)
+              .replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3')
+              // Convert single-quoted keys to double quotes securely
+              .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3');
             return JSON.parse(desperateJson);
           } catch (mostDesperateError) {
             console.error("Deep JSON recovery failed:", mostDesperateError);
@@ -211,6 +214,9 @@ export async function validatePostContent(text: string): Promise<{ isSafe: boole
 
       Return ONLY a JSON object:
       { "isSafe": boolean, "reason": "Short explanation in simple language why it's not safe, or null if safe" }`,
+      config: {
+        responseMimeType: "application/json"
+      }
     }));
 
     return safeJsonParse(response.text) || { isSafe: true };
@@ -238,6 +244,9 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
       }
       
       Only return the JSON.`,
+      config: {
+        responseMimeType: "application/json"
+      }
     }));
 
     return safeJsonParse(response.text);
@@ -316,6 +325,9 @@ export async function getLessonContent(level: string, category: string, targetLa
       }
       
       Only return the JSON.`,
+      config: {
+        responseMimeType: "application/json"
+      }
     }));
 
     return safeJsonParse(response.text);
