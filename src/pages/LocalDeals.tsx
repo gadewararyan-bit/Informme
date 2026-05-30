@@ -129,8 +129,10 @@ const LocalDeals: React.FC = () => {
         return isMyOwn || isAdmin;
       });
 
-      // Sort in-memory to avoid composite index requirements
+      // Sort in-memory to avoid composite index requirements, keeping pinned promotions at the absolute top
       dealsData.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
         const timeA = a.createdAt?.toMillis?.() || (a.createdAt instanceof Date ? a.createdAt.getTime() : Date.now());
         const timeB = b.createdAt?.toMillis?.() || (b.createdAt instanceof Date ? b.createdAt.getTime() : Date.now());
         return timeB - timeA;
@@ -379,10 +381,20 @@ const LocalDeals: React.FC = () => {
                   key={deal.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 flex flex-col group relative overflow-hidden"
+                  className={`p-8 rounded-[40px] pro-shadow border flex flex-col group relative overflow-hidden transition-all duration-300 ${
+                    deal.isPinned 
+                      ? 'bg-gradient-to-br from-amber-50/50 via-white to-amber-50/10 border-amber-300 ring-2 ring-amber-200/50 shadow-md shadow-amber-50/30' 
+                      : 'bg-white border-gray-100'
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-6 relative z-10">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                       {deal.isPinned && (
+                         <div className="px-2.5 py-1 bg-amber-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-0.5 shadow-sm" title="Sponsored Pinned Promotion">
+                           <Sparkles className="w-3 h-3 text-white fill-white animate-pulse" />
+                           <span>🔥 FEATURED / टॉप जाहिरात</span>
+                         </div>
+                       )}
                        <div className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-orange-100">
                           {deal.category}
                        </div>

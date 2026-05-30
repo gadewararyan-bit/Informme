@@ -52,8 +52,9 @@ const PostDeal: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'free_promo'>('upi');
   const [freePromoDetails, setFreePromoDetails] = useState('');
   const [ownerConfig, setOwnerConfig] = useState({
-    upiId: '8600869341@okaxis',
-    phone: '+918600869341'
+    upiId: '8600869341@upi',
+    phone: '+918600869341',
+    dealPostPrice: 99
   });
 
   useEffect(() => {
@@ -61,8 +62,9 @@ const PostDeal: React.FC = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setOwnerConfig({
-          upiId: data.upiId || '8600869341@okaxis',
-          phone: data.phone || '+918600869341'
+          upiId: data.upiId || '8600869341@upi',
+          phone: data.phone || '+918600869341',
+          dealPostPrice: data.dealPostPrice !== undefined ? Number(data.dealPostPrice) : 99
         });
       }
     });
@@ -422,7 +424,7 @@ const PostDeal: React.FC = () => {
                   paymentMethod === 'upi' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'
                 }`}
               >
-                💳 Pay ₹99 Upfront
+                💳 Pay ₹{ownerConfig.dealPostPrice} Upfront
               </button>
               <button
                 type="button"
@@ -438,7 +440,7 @@ const PostDeal: React.FC = () => {
             {paymentMethod === 'upi' ? (
               <div className="space-y-6">
                 <p className="text-xs text-gray-500 leading-relaxed font-semibold">
-                  To publish your promotional campaign deal in the local feed, an upfront listing activation fee of <b className="text-gray-900">₹99</b> is required. This prevents spam and verifies your shop's authenticity.
+                  To publish your promotional campaign deal in the local feed, an upfront listing activation fee of <b className="text-gray-900">₹{ownerConfig.dealPostPrice}</b> is required. This prevents spam and verifies your shop's authenticity.
                 </p>
 
                 <div className="bg-slate-900 text-white rounded-[32px] p-6 space-y-4">

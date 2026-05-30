@@ -33,7 +33,7 @@ export default function Home() {
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [ownerConfig, setOwnerConfig] = useState(() => ({
-    upiId: localStorage.getItem('owner_upi_id') || '8600869341@okaxis',
+    upiId: localStorage.getItem('owner_upi_id') || '8600869341@upi',
     phone: localStorage.getItem('owner_phone') || '+918600869341'
   }));
 
@@ -42,7 +42,7 @@ export default function Home() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setOwnerConfig({
-          upiId: data.upiId || '8600869341@okaxis',
+          upiId: data.upiId || '8600869341@upi',
           phone: data.phone || '+918600869341'
         });
       }

@@ -128,6 +128,7 @@ export interface Deal {
   isApproved?: boolean;
   isFreePromotion?: boolean;
   freePromoDetails?: string;
+  isPinned?: boolean;
 }
 
 export interface DailyPromoProof {
@@ -140,3 +141,13 @@ export interface DailyPromoProof {
   uploadedAt: any;
   remarks?: string;
 }
+
+export interface SponsorCoupon {
+  id: string;
+  sponsorName: string;
+  code: string;
+  offerDetails: string;
+  active: boolean;
+  createdAt: any;
+}
+

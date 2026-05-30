@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Bot, User, Loader2, Sparkles, ChevronLeft, 
-  MessageSquare, Plus, X, Search, MessageSquareCode, CheckCircle2 
+  MessageSquare, Plus, X, Search, MessageSquareCode, CheckCircle2,
+  Gift, Copy, Share2, Coins, Check
 } from 'lucide-react';
 import { chatWithAIStream } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import LocationPicker from '../components/common/LocationPicker';
 import { 
   collection, query, where, orderBy, onSnapshot, 
-  addDoc, serverTimestamp, getDocs, doc 
+  addDoc, serverTimestamp, getDocs, doc, updateDoc
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { formatDistanceToNow } from 'date-fns';
@@ -454,7 +455,7 @@ const AIChat: React.FC = () => {
               className="flex-1 flex flex-col h-full overflow-hidden w-full relative"
             >
               {/* Message Thread Scroll */}
-              <div className="flex-1 overflow-y-auto px-6 pt-8 pb-36 space-y-6 w-full scrollbar-hide">
+              <div className="flex-1 overflow-y-auto px-6 pt-8 pb-60 space-y-6 w-full scrollbar-hide">
                 {aiMessages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-16">
                     <h2 className="text-3xl sm:text-5xl font-black italic uppercase tracking-tighter text-[#BCC1C8] mb-2">
@@ -504,12 +505,13 @@ const AIChat: React.FC = () => {
                     </div>
                   </div>
                 )}
+
                 <div ref={aiEndRef} />
               </div>
 
               {/* Bottom Fixed Bar */}
-              <div className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-gradient-to-t from-[#F8F9FA] via-[#F8F9FA] to-transparent z-10">
-                <form onSubmit={handleAISend} className="relative bg-white rounded-full border border-gray-100 shadow-md p-1.5 flex items-center">
+              <div className="fixed bottom-[112px] left-1/2 -translate-x-1/2 w-[90%] max-w-[500px] z-[999] px-2 py-1">
+                <form onSubmit={handleAISend} className="relative bg-white rounded-full border border-gray-200 shadow-xl p-1.5 flex items-center ring-1 ring-black/[0.03]">
                   <input
                     type="text"
                     value={aiInput}
@@ -829,6 +831,7 @@ const AIChat: React.FC = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

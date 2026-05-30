@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { User } from '../types';
 import { ADMIN_EMAILS } from '../constants';
 import { normalizeLocation } from '../lib/locationUtils';
@@ -37,6 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!data.email && firebaseUser.email) {
               data.email = firebaseUser.email;
             }
+
+            // Dynamically generate referral code if missing
+            if (!data.referralCode) {
+              const cleanedName = (data.displayName || 'USER').replace(/[^a-zA-Z0-9]/g, '').substring(0, 5).toUpperCase();
+              const genCode = `${cleanedName}${Math.floor(1000 + Math.random() * 9000)}`;
+              await updateDoc(userRef, { referralCode: genCode });
+              return;
+            }
+
             const isEmailAdmin = (data.email && ADMIN_EMAILS.includes(data.email.trim().toLowerCase())) || 
                                  (firebaseUser.email && ADMIN_EMAILS.includes(firebaseUser.email.trim().toLowerCase()));
             const isNameAdmin = (data.displayName && data.displayName.toLowerCase().trim() === 'aryan gadewar') ||

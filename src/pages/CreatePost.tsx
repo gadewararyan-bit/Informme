@@ -37,8 +37,9 @@ export default function CreatePost() {
   const [paymentTxId, setPaymentTxId] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [ownerConfig, setOwnerConfig] = useState({
-    upiId: '8600869341@okaxis',
-    phone: '+918600869341'
+    upiId: '8600869341@upi',
+    phone: '+918600869341',
+    sponsorPinPrice: 99
   });
 
   useEffect(() => {
@@ -46,8 +47,9 @@ export default function CreatePost() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setOwnerConfig({
-          upiId: data.upiId || '8600869341@okaxis',
-          phone: data.phone || '+918600869341'
+          upiId: data.upiId || '8600869341@upi',
+          phone: data.phone || '+918600869341',
+          sponsorPinPrice: data.sponsorPinPrice !== undefined ? Number(data.sponsorPinPrice) : 99
         });
       }
     });
@@ -464,7 +466,7 @@ export default function CreatePost() {
                   <div className="relative z-10 space-y-2">
                     <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Campaign Booking Payment</span>
                     <p className="text-[10px] text-slate-300 uppercase tracking-widest leading-relaxed">
-                      Make an upfront payment of <b className="text-white">₹99</b> directory activation fee via UPI ID to launch this sponsored post:
+                      Make an upfront payment of <b className="text-white">₹{ownerConfig.sponsorPinPrice}</b> directory activation fee via UPI ID to launch this sponsored post:
                     </p>
                     
                     <div className="flex items-center justify-between border border-white/10 bg-white/5 rounded-xl p-3 mt-2">

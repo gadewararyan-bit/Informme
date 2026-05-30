@@ -1,31 +1,56 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Check, Zap, Crown, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 const Pricing: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubscribe = async (plan: string) => {
+  const [pricingConfig, setPricingConfig] = useState({
+    isSubscriptionPaid: false, // Default is FREE trial
+    basicPlanPrice: 9,
+    proPlanPrice: 19,
+    enterprisePlanPrice: 49
+  });
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'system_config', 'owner_details'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setPricingConfig({
+          isSubscriptionPaid: data.isSubscriptionPaid !== undefined ? !!data.isSubscriptionPaid : false,
+          basicPlanPrice: data.basicPlanPrice !== undefined ? Number(data.basicPlanPrice) : 9,
+          proPlanPrice: data.proPlanPrice !== undefined ? Number(data.proPlanPrice) : 19,
+          enterprisePlanPrice: data.enterprisePlanPrice !== undefined ? Number(data.enterprisePlanPrice) : 49
+        });
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSubscribe = async (plan: string, priceDisplay: string) => {
     if (!user) {
       navigate('/login');
       return;
     }
 
-    // SIMULATED PAYMENT: In a real app, this would redirect to Stripe
-    // For now, let's simulate a successful upgrade
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         isPremium: true,
-        subscriptionPlan: plan,
+        subscriptionPlan: plan.toLowerCase(),
         subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
-      alert(`Success! You have subscribed to the ${plan} plan.`);
+      
+      if (!pricingConfig.isSubscriptionPaid) {
+        alert(`🎁 SUCCESS / यशस्वी झालं! You have activated the ${plan} plan for FREE! (पुढील १ ते २ महिने मोफत योजना सक्रिय झाली आहे)`);
+      } else {
+        alert(`Success! You have subscribed to the ${plan} plan for ${priceDisplay}.`);
+      }
       navigate('/ai-chat');
     } catch (error) {
       console.error("Error subscribing:", error);
@@ -35,7 +60,8 @@ const Pricing: React.FC = () => {
   const plans = [
     {
       name: 'Basic Node',
-      price: '$9',
+      price: pricingConfig.isSubscriptionPaid ? `$${pricingConfig.basicPlanPrice}` : 'FREE',
+      originalPrice: pricingConfig.isSubscriptionPaid ? null : `$${pricingConfig.basicPlanPrice}`,
       duration: 'month',
       icon: Zap,
       color: 'blue',
@@ -43,7 +69,8 @@ const Pricing: React.FC = () => {
     },
     {
       name: 'Pro Core',
-      price: '$19',
+      price: pricingConfig.isSubscriptionPaid ? `$${pricingConfig.proPlanPrice}` : 'FREE',
+      originalPrice: pricingConfig.isSubscriptionPaid ? null : `$${pricingConfig.proPlanPrice}`,
       duration: 'month',
       icon: Crown,
       color: 'indigo',
@@ -52,7 +79,8 @@ const Pricing: React.FC = () => {
     },
     {
       name: 'Enterprise',
-      price: '$49',
+      price: pricingConfig.isSubscriptionPaid ? `$${pricingConfig.enterprisePlanPrice}` : 'FREE',
+      originalPrice: pricingConfig.isSubscriptionPaid ? null : `$${pricingConfig.enterprisePlanPrice}`,
       duration: 'month',
       icon: ShieldCheck,
       color: 'emerald',
@@ -70,6 +98,22 @@ const Pricing: React.FC = () => {
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-4 block">Access Protocols</span>
           <h1 className="text-4xl font-black uppercase text-white tracking-tighter italic mb-4">Choose Your Node</h1>
           <p className="text-gray-400 text-sm font-medium max-w-md mx-auto">Select a subscription plan to unlock full terminal capabilities and premium networking features.</p>
+          
+          {!pricingConfig.isSubscriptionPaid && (
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-6 inline-flex flex-col sm:flex-row items-center gap-3 bg-amber-400 text-[#0c0a09] px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-400/20 relative"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-900 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-950"></span>
+              </span>
+              <span>🔥 Limited Free Promo active! / मर्यादित मोफत योजना सुरू आहे!</span>
+              <span className="bg-[#0c0a09] text-amber-400 px-3 py-1 rounded-full text-[9px] font-bold">1-2 MONTHS FREE</span>
+            </motion.div>
+          )}
         </motion.div>
       </div>
 
@@ -94,9 +138,16 @@ const Pricing: React.FC = () => {
               </div>
 
               <h3 className="text-xl font-black uppercase tracking-tighter italic text-gray-900 mb-2">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-4xl font-black italic text-gray-900">{plan.price}</span>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">/ {plan.duration}</span>
+              <div className="flex flex-col mb-8">
+                <div className="flex items-baseline gap-2">
+                  {plan.originalPrice && (
+                    <span className="text-xl font-black text-gray-400 line-through tracking-tight">{plan.originalPrice}</span>
+                  )}
+                  <span className="text-4xl font-black italic text-gray-900 tracking-tight">{plan.price}</span>
+                </div>
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-wider mt-1">
+                  {!pricingConfig.isSubscriptionPaid ? '🎁 FREE TRIAL / मोफत योजना' : `/ ${plan.duration}`}
+                </span>
               </div>
 
               <div className="space-y-4 mb-12 flex-1">
@@ -111,7 +162,7 @@ const Pricing: React.FC = () => {
               </div>
 
               <button
-                onClick={() => handleSubscribe(plan.name)}
+                onClick={() => handleSubscribe(plan.name, plan.price)}
                 className={`w-full py-5 rounded-3xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 group ${
                   plan.recommended 
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-200' 

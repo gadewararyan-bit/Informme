@@ -13,7 +13,14 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isOwner(ownerId) { return isSignedIn() && request.auth.uid == ownerId; }
-    function isAdmin() { return isSignedIn() && request.auth.token.email.lower() == 'gadewarkalpna@gmail.com'; }
+    function isAdmin() { 
+      return isSignedIn() && 
+        (request.auth.token.email.lower() == 'gadewarkalpna@gmail.com' ||
+         request.auth.token.email.lower() == 'gadewararyan@gmail.com' ||
+         request.auth.token.email.lower() == 'aryangadewar@gmail.com' ||
+         request.auth.token.email.lower() == 'aryangadewar2@gmail.com' ||
+         request.auth.token.email.lower() == 'aryan.gadewar@gmail.com'); 
+    }
 
     // --- Entity Validations ---
 
@@ -101,6 +108,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true; // Temporarily relaxed for seeding batch
       allow update: if isVerified() && (
+        isAdmin() ||
         // Allow author to update full content
         (isOwner(existing().authorId) && isValidPost(incoming()) && 
          incoming().authorId == existing().authorId &&
@@ -136,6 +144,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isVerified() && isValidDeal(incoming());
       allow update: if isVerified() && (
+        isAdmin() ||
         (isOwner(existing().authorId) && isValidDeal(incoming())) ||
         (!isOwner(existing().authorId) && 
          incoming().diff(existing()).affectedKeys().hasOnly(['savedBy']) &&
@@ -143,6 +152,13 @@ service cloud.firestore {
          incoming().title == existing().title)
       );
       allow delete: if isVerified() && (isOwner(existing().authorId) || isAdmin());
+    }
+
+    match /promotion_proofs/{proofId} {
+      allow read: if isSignedIn();
+      allow create: if isVerified() && incoming().merchantId == request.auth.uid;
+      allow delete: if isVerified() && (existing().merchantId == request.auth.uid || isAdmin());
+      allow update: if false; // Uploaded counter videos / checks are final/immutable
     }
 
     match /system_config/{configId} {

@@ -262,7 +262,7 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
 
 export async function chatWithAIStream(messages: { role: 'user' | 'model', content: string }[], onChunk: (text: string) => void, language: string = 'en', isPremium: boolean = false) {
   try {
-    const modelTier = "gemini-3.5-flash"; // Use stable flash model
+    const modelTier = isPremium ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
     let systemInstruction = INFORMME_AI_PROMPT + `\n\nPreferred Language: ${language}. You MUST respond strictly in the language selected by the user (${language}), or in the language they used to query you. Do not force Marathi if they query or select a different language. Match their language perfectly while respecting all the core tone and safety guidelines!`;
 
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || "";

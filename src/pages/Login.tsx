@@ -1,13 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Info, Mail, AlertCircle, MapPin } from 'lucide-react';
 import { signInWithPopup, googleProvider, auth, db } from '../services/firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, where } from 'firebase/firestore';
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [areaName, setAreaName] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('ref');
+      if (refCode) {
+        sessionStorage.setItem('referredByCode', refCode.trim());
+        console.log("Captured campaign referral reference:", refCode);
+      }
+    } catch (e) {
+      console.error("Failed to capture URL routing parameter:", e);
+    }
+  }, []);
 
   const handleGoogleLogin = async () => {
     if (!areaName.trim()) {
@@ -49,6 +62,26 @@ export default function Login() {
           console.error("Failed to check unique name during signup, continuing:", e);
         }
 
+        // Generate immediate referral code
+        const baseName = desiredName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 5).toUpperCase();
+        const initialReferralCode = `${baseName}${Math.floor(1000 + Math.random() * 9000)}`;
+
+        // Look up who referred this user
+        let referredByUid = '';
+        const savedRefCode = sessionStorage.getItem('referredByCode');
+        if (savedRefCode) {
+          try {
+            const refQuery = query(collection(db, 'users'), where('referralCode', '==', savedRefCode));
+            const refSnap = await getDocs(refQuery);
+            if (!refSnap.empty) {
+              referredByUid = refSnap.docs[0].id;
+              console.log("Matched referrer ID:", referredByUid);
+            }
+          } catch (err) {
+            console.error("Error matching referral code:", err);
+          }
+        }
+
         const newUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || '',
@@ -56,7 +89,9 @@ export default function Login() {
           photoURL: firebaseUser.photoURL || '',
           createdAt: new Date().toISOString(),
           location: locationData,
-          language: 'en'
+          language: 'en',
+          referralCode: initialReferralCode,
+          referredBy: referredByUid
         };
         await setDoc(userRef, newUser);
       } else {
