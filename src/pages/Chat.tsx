@@ -32,6 +32,45 @@ export default function ChatPage() {
     return () => unsubscribe();
   }, [user]);
 
+  // Parse query params to start dynamic chat from a regional alert post
+  useEffect(() => {
+    if (!user || loading) return;
+    const params = new URLSearchParams(window.location.search);
+    const targetUid = params.get('userId');
+    const targetName = params.get('userName');
+    if (!targetUid || targetUid === user.uid) return;
+
+    // Check if chat already exists
+    const existingChat = chats.find(c => 
+      c.participants.includes(user.uid) && c.participants.includes(targetUid)
+    );
+
+    if (existingChat) {
+      if (selectedChat !== existingChat.id) {
+        setSelectedChat(existingChat.id);
+      }
+    } else {
+      const createDirectChat = async () => {
+        try {
+          const namesMap = {
+            [user.uid]: user.displayName || 'Regional Citizen',
+            [targetUid]: targetName || 'Citizen Partner'
+          };
+          const docRef = await addDoc(collection(db, 'chats'), {
+            participants: [user.uid, targetUid],
+            updatedAt: serverTimestamp(),
+            lastMessage: 'Chat initialized',
+            participantNamesMap: namesMap
+          });
+          setSelectedChat(docRef.id);
+        } catch (e) {
+          console.error("Error starting direct chat session:", e);
+        }
+      };
+      createDirectChat();
+    }
+  }, [chats, loading, user]);
+
   // Fetch messages if chat selected
   useEffect(() => {
     if (!selectedChat) return;
@@ -88,26 +127,38 @@ export default function ChatPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-hide">
-          {chats.length > 0 ? chats.map(chat => (
-            <button
-              key={chat.id}
-              onClick={() => setSelectedChat(chat.id)}
-              className={`w-full flex items-center gap-4 p-5 rounded-[28px] transition-all group ${
-                selectedChat === chat.id 
-                ? 'bg-white pro-shadow border border-indigo-50 ring-4 ring-indigo-50/30' 
-                : 'hover:bg-white/60'
-              }`}
-            >
-              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center relative pro-shadow ring-2 ring-white">
-                <UserIcon className="w-7 h-7 text-gray-300" />
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white shadow-sm" />
-              </div>
-              <div className="flex-1 text-left overflow-hidden">
-                <h4 className="font-black text-gray-900 text-[11px] uppercase tracking-widest truncate mb-0.5">Contact Node</h4>
-                <p className="text-[10px] font-bold text-gray-400 truncate leading-none uppercase italic">{chat.lastMessage || 'Initialize stream...'}</p>
-              </div>
-            </button>
-          )) : (
+          {chats.length > 0 ? chats.map(chat => {
+            const partnerName = (() => {
+              if (chat.participantNamesMap) {
+                const otherUid = chat.participants.find(p => p !== user?.uid);
+                if (otherUid && chat.participantNamesMap[otherUid]) {
+                  return chat.participantNamesMap[otherUid];
+                }
+              }
+              return 'Citizen Contact';
+            })();
+
+            return (
+              <button
+                key={chat.id}
+                onClick={() => setSelectedChat(chat.id)}
+                className={`w-full flex items-center gap-4 p-5 rounded-[28px] transition-all group ${
+                  selectedChat === chat.id 
+                  ? 'bg-white pro-shadow border border-indigo-50 ring-4 ring-indigo-50/30' 
+                  : 'hover:bg-white/60'
+                }`}
+              >
+                <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center relative pro-shadow ring-2 ring-white">
+                  <span className="text-sm font-black uppercase text-indigo-800">{partnerName.slice(0, 2)}</span>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white shadow-sm" />
+                </div>
+                <div className="flex-1 text-left overflow-hidden">
+                  <h4 className="font-black text-gray-900 text-[11px] uppercase tracking-widest truncate mb-0.5">{partnerName}</h4>
+                  <p className="text-[10px] font-bold text-gray-400 truncate leading-none uppercase italic">{chat.lastMessage || 'Initialize stream...'}</p>
+                </div>
+              </button>
+            );
+          }) : (
             <div className="text-center py-20 px-8">
               <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center mx-auto mb-6 pro-shadow border border-dashed border-gray-200">
                 <MessageCircle className="w-8 h-8 text-gray-100" />
@@ -132,11 +183,22 @@ export default function ChatPage() {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center pro-shadow ring-2 ring-white">
-                  <UserIcon className="w-6 h-6 text-gray-300" />
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center pro-shadow ring-2 ring-white">
+                  <UserIcon className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest">Active Stream</h3>
+                  <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest">
+                    {(() => {
+                      const activeChatObj = chats.find(c => c.id === selectedChat);
+                      if (activeChatObj && activeChatObj.participantNamesMap) {
+                        const otherUid = activeChatObj.participants.find(p => p !== user?.uid);
+                        if (otherUid && activeChatObj.participantNamesMap[otherUid]) {
+                          return activeChatObj.participantNamesMap[otherUid];
+                        }
+                      }
+                      return 'Active Stream';
+                    })()}
+                  </h3>
                   <div className="flex items-center gap-1.5 mt-1">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                     <span className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">Secured</span>

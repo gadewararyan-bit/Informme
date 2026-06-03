@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { formatDistanceToNow } from 'date-fns';
+import { LAYOUT_CONFIG } from '../constants';
 
 interface AIMessage {
   role: 'user' | 'model';
@@ -455,7 +456,7 @@ const AIChat: React.FC = () => {
               className="flex-1 flex flex-col h-full overflow-hidden w-full relative"
             >
               {/* Message Thread Scroll */}
-              <div className="flex-1 overflow-y-auto px-6 pt-8 pb-60 space-y-6 w-full scrollbar-hide">
+              <div className="flex-1 overflow-y-auto px-6 pt-8 pb-52 space-y-6 w-full scrollbar-hide">
                 {aiMessages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-16">
                     <h2 className="text-3xl sm:text-5xl font-black italic uppercase tracking-tighter text-[#BCC1C8] mb-2">
@@ -509,9 +510,12 @@ const AIChat: React.FC = () => {
                 <div ref={aiEndRef} />
               </div>
 
-              {/* Bottom Fixed Bar */}
-              <div className="fixed bottom-[112px] left-1/2 -translate-x-1/2 w-[90%] max-w-[500px] z-[999] px-2 py-1">
-                <form onSubmit={handleAISend} className="relative bg-white rounded-full border border-gray-200 shadow-xl p-1.5 flex items-center ring-1 ring-black/[0.03]">
+              {/* Bottom Fixed Bar styled as a premium floating bar sits above BottomNav */}
+              <div 
+                className="fixed left-0 right-0 w-full z-40 bg-gradient-to-t from-[#FCFCFC] via-[#FCFCFC]/80 to-transparent pt-6 pb-2 px-4 flex justify-center"
+                style={{ bottom: `${LAYOUT_CONFIG.chatInputBottom}px` }}
+              >
+                <form onSubmit={handleAISend} className="w-full max-w-[500px] relative bg-white/95 backdrop-blur-md rounded-full border border-gray-200 shadow-xl p-1.5 flex items-center ring-1 ring-black/[0.03]">
                   <input
                     type="text"
                     value={aiInput}
@@ -523,7 +527,7 @@ const AIChat: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!aiInput.trim() || isAiLoading}
-                    className="w-11 h-11 bg-blue-600 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-20 shadow-md shadow-blue-200"
+                    className="w-11 h-11 bg-blue-600 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-20 shadow-md shadow-blue-200 flex-shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </button>

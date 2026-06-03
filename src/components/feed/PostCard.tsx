@@ -344,14 +344,14 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
       )}
 
       {/* Post Header */}
-      <div className="p-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="p-8 pb-5">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3.5">
             <div className="relative">
               <img 
                 src={post.authorPhoto || `https://ui-avatars.com/api/?name=${post.authorName}`} 
                 alt={post.authorName}
-                className="w-11 h-11 rounded-full object-cover ring-2 ring-gray-50"
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100/40"
               />
               <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
                 post.type === 'news' ? 'bg-blue-500' :
@@ -362,24 +362,24 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-gray-900 tracking-tight">{post.authorName}</h3>
+                <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">{post.authorName}</h3>
                 <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{formatSafeDate(post.createdAt)}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{formatSafeDate(post.createdAt)}</span>
               </div>
-              <div className="flex items-center gap-3 mt-0.5">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                  <MapPin className="w-3 h-3 text-india-green" />
+              <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                   {post.location?.areaName}
                 </div>
                 {post.type !== 'news' && (
-                   <div className="px-2 py-0.5 bg-gray-100 rounded-full text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                   <div className="px-2.5 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-widest">
                      {post.type}
                    </div>
                 )}
                 {post.expiresAt && !post.isSponsored && (
-                  <div className="bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <span>⌛ {getDaysRemaining()} Days Left</span>
-                  </div>
+                   <div className="bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                     <span>⌛ {getDaysRemaining()} Days Left</span>
+                   </div>
                 )}
               </div>
             </div>
@@ -501,7 +501,7 @@ export default function PostCard({ post, onDelete, compact = false }: PostCardPr
       )}
 
       {/* Interaction Footer */}
-      <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+      <div className="px-8 py-5 bg-white border-t border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <button 
             onClick={handleLike}

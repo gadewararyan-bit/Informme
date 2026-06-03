@@ -14,7 +14,11 @@ export interface User {
     lng: number;
     areaName: string;
     pinCode?: string;
+    homeState?: string;
+    infoState?: string;
   };
+  homeState?: string;
+  infoState?: string;
   fcmTokens?: string[];
   createdAt?: any;
   updatedAt?: any;
@@ -86,6 +90,7 @@ export interface Chat {
   participants: string[];
   lastMessage?: string;
   updatedAt: any;
+  participantNamesMap?: {[key: string]: string};
 }
 
 export interface Message {

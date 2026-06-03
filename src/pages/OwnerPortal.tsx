@@ -32,8 +32,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import SeedingTool from '../components/admin/SeedingTool';
-import { ADMIN_EMAILS } from '../constants';
+import { ADMIN_EMAILS, INDIAN_STATES, STATE_FEATURE_TEMPLATES, STATE_MILESTONE_LEVELS } from '../constants';
 
 export default function OwnerPortal() {
   const { user } = useAuth();
@@ -48,7 +47,8 @@ export default function OwnerPortal() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'moderation' | 'content' | 'seeding' | 'royalties' | 'freePartners' | 'coupons'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'moderation' | 'content' | 'royalties' | 'freePartners' | 'coupons' | 'stateMilestones'>('overview');
+
   const [partnerProofs, setPartnerProofs] = useState<any[]>([]);
 
   // Sponsor Coupons States
@@ -155,6 +155,74 @@ export default function OwnerPortal() {
     message: '',
     onConfirm: () => {},
   });
+
+  const [configStateCode, setConfigStateCode] = useState<string>('MH');
+  const [levelMappings, setLevelMappings] = useState<{[key: string]: string}>({});
+  const [savingConfig, setSavingConfig] = useState<boolean>(false);
+
+  // Load State Milestone Configuration
+  useEffect(() => {
+    if (!isAdmin || !configStateCode) return;
+    const docRef = doc(db, 'state_milestone_configs', configStateCode);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setLevelMappings(data.mappings || {});
+      } else {
+        // Set default mappings if none exist
+        setLevelMappings({
+          level1: 'old_is_gold',
+          level2: 'weather_pest',
+          level3: 'traditional_medicine',
+          level4: 'legal_aid',
+          level5: 'property_marketplace',
+          level6: 'lost_found',
+          level7: 'youth_sports',
+          level8: 'gram_polls'
+        });
+      }
+    }, (err) => {
+      console.error("Error loading milestone config:", err);
+    });
+    return () => unsubscribe();
+  }, [configStateCode, isAdmin]);
+
+  const handleSaveStateConfig = async () => {
+    if (!configStateCode) return;
+    setSavingConfig(true);
+    try {
+      const docRef = doc(db, 'state_milestone_configs', configStateCode);
+      const mappingsUpdate = { ...levelMappings };
+      
+      // Ensure we fill any missing levels with fallback values
+      const fallbacks = ['old_is_gold', 'weather_pest', 'traditional_medicine', 'legal_aid', 'property_marketplace', 'lost_found', 'youth_sports', 'gram_polls'];
+      for (let i = 1; i <= 8; i++) {
+        if (!mappingsUpdate[`level${i}`]) {
+          mappingsUpdate[`level${i}`] = fallbacks[i - 1] || 'old_is_gold';
+        }
+      }
+
+      await updateDoc(docRef, {
+        state: configStateCode,
+        mappings: mappingsUpdate,
+        updatedAt: serverTimestamp()
+      }).catch(async (err) => {
+        // If it doesn't exist, create it (setDoc behavior with merge: true)
+        const { setDoc } = await import('firebase/firestore');
+        await setDoc(docRef, {
+          state: configStateCode,
+          mappings: mappingsUpdate,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      });
+      triggerAlert("यशस्वी (Success)", "या राज्यासाठीच्या ८ पायऱ्यांचे फीचर्स यशस्वीरीत्या सेव्ह केले आहेत!");
+    } catch (err: any) {
+      console.error("Error saving state config:", err);
+      triggerAlert("त्रुटी (Error)", "बदल सेव्ह करताना अडचण आली: " + err.message);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   const triggerConfirm = (
     title: string,
@@ -556,12 +624,12 @@ export default function OwnerPortal() {
            {[
              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
              { id: 'users', label: 'User Management', icon: Users },
+             { id: 'stateMilestones', label: 'State Milestones 📍', icon: MapPin },
              { id: 'royalties', label: 'Partner Royalties', icon: Coins },
              { id: 'freePartners', label: 'Free Shop Promos 🤝', icon: Percent },
              { id: 'coupons', label: 'Sponsor Coupons 🏷️', icon: Gift },
              { id: 'content', label: 'Posts', icon: Database },
-             { id: 'moderation', label: 'Safety', icon: ShieldAlert },
-             { id: 'seeding', label: 'AI Seed', icon: TrendingUp }
+             { id: 'moderation', label: 'Safety', icon: ShieldAlert }
            ].map(tab => (
              <button 
                key={tab.id}
@@ -1482,15 +1550,123 @@ export default function OwnerPortal() {
               </div>
            )}
 
-          {activeTab === 'seeding' && (
-            <div className="bg-white rounded-[40px] pro-shadow border border-gray-100 p-10">
-               <div className="mb-8">
-                  <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Automated Node Deployment</h3>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Seed the network with local AI-generated headlines.</p>
-               </div>
-               <SeedingTool />
-            </div>
-          )}
+          {activeTab === 'stateMilestones' && (
+             <div className="bg-white rounded-[40px] pro-shadow border border-gray-100 p-8 md:p-10 text-gray-800 space-y-8 animate-fade-in">
+                <div>
+                   <div className="flex items-center gap-2 mb-2">
+                      <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+                         Owner Administration
+                      </span>
+                   </div>
+                   <h3 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 leading-tight">
+                      राज्यस्तरीय पायऱ्या व २४ फिचर्स रचना (State Milestones & 24 Features)
+                   </h3>
+                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-relaxed max-w-3xl">
+                      कोणत्याही राज्याचे प्रगतीचे टक्के ५% किंवा १०% वरून ८०% गाठल्यावर आपोआप कोणती विशेष सेवा सुरू व्हावी हे तुम्ही येथून नियंत्रित करू शकता. २४ हायपर-लोकल फीचर्सचे पर्याय उपलब्ध आहेत!
+                   </p>
+                </div>
+
+                <div className="bg-slate-50 p-6 rounded-3xl border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                   <div>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 tracking-wider mb-2">
+                         Select State to Configure (राज्य निवडा)
+                      </label>
+                      <select
+                         value={configStateCode}
+                         onChange={(e) => setConfigStateCode(e.target.value)}
+                         className="w-full bg-white border border-gray-200 p-3.5 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                      >
+                         {INDIAN_STATES.map((st) => (
+                            <option key={st.code} value={st.code}>
+                               {st.nameEn} - {st.nameMr} ({st.code})
+                            </option>
+                         ))}
+                      </select>
+                   </div>
+                   <div className="text-xs text-gray-500 space-y-1">
+                      <p className="font-extrabold text-indigo-600 uppercase tracking-widest text-[9px] mb-1">PRO-TIP FOR ARYAN:</p>
+                      <p className="font-medium leading-relaxed">
+                         Each state has a customized sequence. When users register in <span className="font-bold text-slate-900">{INDIAN_STATES.find(s => s.code === configStateCode)?.nameEn}</span>, progress increments automatically. At designated percentages, the selected services automatically go live on their homescreen!
+                      </p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                   {STATE_MILESTONE_LEVELS.map((ml) => {
+                      const levelKey = `level${ml.level}`;
+                      const selectedFeatureId = levelMappings[levelKey] || '';
+                      const activeFeature = STATE_FEATURE_TEMPLATES.find(f => f.id === selectedFeatureId);
+
+                      return (
+                         <div key={ml.level} className="bg-white p-5 rounded-3xl border border-gray-100 pro-shadow flex flex-col justify-between hover:border-indigo-100 transition-colors">
+                            <div className="space-y-4">
+                               <div className="flex items-center justify-between">
+                                  <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                                     LEVEL {ml.level}
+                                  </span>
+                                  <span className="text-xs font-black text-indigo-600">
+                                     {ml.pct}% Users
+                                  </span>
+                               </div>
+
+                               <div className="space-y-1">
+                                  <label className="block text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                                     Target Unlock Action:
+                                  </label>
+                                  <select
+                                     value={selectedFeatureId}
+                                     onChange={(e) => {
+                                        const newVal = e.target.value;
+                                        setLevelMappings(prev => ({
+                                           ...prev,
+                                           [levelKey]: newVal
+                                        }));
+                                     }}
+                                     className="w-full bg-slate-50 border border-gray-100 p-2.5 rounded-xl text-xs font-bold text-gray-800 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                  >
+                                     <option value="">-- Choose Feature / Service --</option>
+                                     {STATE_FEATURE_TEMPLATES.map((tmpl) => (
+                                        <option key={tmpl.id} value={tmpl.id}>
+                                           {tmpl.titleEn} ({tmpl.titleMr})
+                                        </option>
+                                     ))}
+                                  </select>
+                               </div>
+
+                               {activeFeature ? (
+                                  <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100/50 space-y-1">
+                                     <p className="text-[10px] font-extrabold text-indigo-950 uppercase">
+                                        👉 {activeFeature.titleEn}
+                                     </p>
+                                     <p className="text-[9px] font-bold text-indigo-500 leading-snug">
+                                        {activeFeature.titleMr}
+                                     </p>
+                                     <p className="text-[8px] text-gray-400 font-medium leading-relaxed line-clamp-3">
+                                        {activeFeature.descMr}
+                                     </p>
+                                  </div>
+                               ) : (
+                                  <div className="p-4 text-center border-2 border-dashed border-gray-100 rounded-2xl text-[9px] font-bold text-gray-300 uppercase">
+                                     No feature assigned
+                                  </div>
+                                )}
+                            </div>
+                         </div>
+                      );
+                   })}
+                </div>
+
+                <div className="flex justify-end pt-4">
+                   <button
+                      onClick={handleSaveStateConfig}
+                      disabled={savingConfig}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest px-8 py-4 rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                   >
+                      {savingConfig ? 'सुरक्षित करत आहे...' : 'फिचर्स रचना सुरक्षित करा (Save Config)'}
+                   </button>
+                </div>
+             </div>
+           )}
 
           {activeTab === 'royalties' && (
             <div className="space-y-8 animate-fade-in text-[#0D1B2A]">

@@ -10,8 +10,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ADMIN_EMAILS } from '../constants';
 
-import SeedingTool from '../components/admin/SeedingTool';
-
 export default function Profile() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -380,7 +378,6 @@ export default function Profile() {
                 Open Owner Portal
               </button>
             </div>
-            <SeedingTool />
           </div>
         )}
       </div>

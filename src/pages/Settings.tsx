@@ -6,8 +6,7 @@ import { doc, updateDoc, collection, query, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Globe, Check, ArrowLeft, Loader2, Bell, ShieldCheck, Shield, User as UserIcon, ShieldAlert } from 'lucide-react';
 import { motion } from 'motion/react';
-import { ADMIN_EMAILS } from '../constants';
-import SeedingTool from '../components/admin/SeedingTool';
+import { ADMIN_EMAILS, INDIAN_STATES } from '../constants';
 
 const LANGUAGES = [
   { code: 'en', name: 'English', native: 'English' },
@@ -31,6 +30,8 @@ export default function Settings() {
                   (user?.displayName ? user.displayName.toLowerCase().trim() === 'aryan gadewar' : false);
   const [areaName, setAreaName] = useState(user?.location?.areaName || '');
   const [pinCode, setPinCode] = useState(user?.location?.pinCode || '');
+  const [homeState, setHomeState] = useState(user?.homeState || user?.location?.homeState || '');
+  const [infoState, setInfoState] = useState(user?.infoState || user?.location?.infoState || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [localLanguage, setLocalLanguage] = useState<any>(user?.language || 'en');
@@ -48,6 +49,8 @@ export default function Settings() {
       setDisplayName(user.displayName || '');
       setBio(user.bio || '');
       setLocalLanguage(user.language || 'en');
+      setHomeState(user.homeState || user.location?.homeState || '');
+      setInfoState(user.infoState || user.location?.infoState || '');
     }
   }, [user]);
 
@@ -108,6 +111,10 @@ export default function Settings() {
         bio: bio.trim(),
         'location.areaName': areaName.trim(),
         'location.pinCode': pinCode.trim(),
+        'location.homeState': homeState,
+        'location.infoState': infoState,
+        homeState: homeState,
+        infoState: infoState,
         language: localLanguage
       });
       setLanguage(localLanguage as any);
@@ -183,6 +190,56 @@ export default function Settings() {
           </div>
           
           <div className="space-y-6">
+            {/* Home State selection */}
+            <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+              <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 tracking-widest">
+                {localLanguage === 'mr' ? 'माझे राहते राज्य (Residing State)' : localLanguage === 'hi' ? 'मेरा मूल राज्य (Residing State)' : 'Residing State (Home State)'}
+              </label>
+              <select
+                value={homeState}
+                onChange={(e) => setHomeState(e.target.value)}
+                className="w-full bg-transparent border-none p-0 text-sm font-bold focus:ring-0 text-gray-900 cursor-pointer"
+              >
+                <option value="">-- Select Your Residing State --</option>
+                {INDIAN_STATES.map((st) => (
+                  <option key={st.code} value={st.code}>
+                    {localLanguage === 'mr' ? st.nameMr : localLanguage === 'hi' ? st.nameHi : st.nameEn} ({st.code})
+                  </option>
+                ))}
+              </select>
+              <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-tight mt-1">
+                {localLanguage === 'mr' 
+                  ? '५०% लोक जोडल्यावर विशेष राज्यस्तरीय सेवा सुरू होईल' 
+                  : localLanguage === 'hi' 
+                  ? '५०% उपयोगकर्ता होने पर विशेष राज्य सेवा शुरू होगी' 
+                  : 'Special state-specific feature unlocks at 50% state user capacity!'}
+              </p>
+            </div>
+
+            {/* Target Information State selection */}
+            <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+              <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 tracking-widest">
+                {localLanguage === 'mr' ? 'माहिती मिळवायचे लक्ष्य राज्य (Target State)' : localLanguage === 'hi' ? 'लक्ष्य राज्य (Target State)' : 'Information Target State'}
+              </label>
+              <select
+                value={infoState}
+                onChange={(e) => setInfoState(e.target.value)}
+                className="w-full bg-transparent border-none p-0 text-sm font-bold focus:ring-0 text-gray-900 cursor-pointer"
+              >
+                <option value="">-- Select State for Local Updates --</option>
+                {INDIAN_STATES.map((st) => (
+                  <option key={st.code} value={st.code}>
+                    {localLanguage === 'mr' ? st.nameMr : localLanguage === 'hi' ? st.nameHi : st.nameEn}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mt-1">
+                {localLanguage === 'mr' 
+                  ? 'या राज्याची माहिती तुम्हाला रेकमेंड केली जाईल' 
+                  : 'Get customized information recommender for this state.'}
+              </p>
+            </div>
+
             <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
               <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 tracking-widest">Active Node Area</label>
               <input 
