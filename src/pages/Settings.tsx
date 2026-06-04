@@ -70,6 +70,9 @@ export default function Settings() {
     try {
       const cleanedName = displayName.trim();
       
+      const cleanString = (str: string) => str.toLowerCase().replace(/\s+/g, ' ').trim();
+      const cleanedTarget = cleanString(displayName);
+
       if (!cleanedName) {
         setError(
           localLanguage === 'mr' 
@@ -82,14 +85,15 @@ export default function Settings() {
         return;
       }
 
-      // Check if display name has changed
-      if (cleanedName.toLowerCase() !== user.displayName?.toLowerCase()?.trim()) {
+      // Check if display name has changed (using collapsed whitespace)
+      if (cleanString(user.displayName || '') !== cleanedTarget) {
         const q = query(collection(db, 'users'));
         const querySnapshot = await getDocs(q);
         const nameExists = querySnapshot.docs.some(docSnap => {
           if (docSnap.id === user.uid) return false;
           const data = docSnap.data();
-          return data.displayName?.toLowerCase()?.trim() === cleanedName.toLowerCase();
+          const existingName = data.displayName || '';
+          return cleanString(existingName) === cleanedTarget;
         });
 
         if (nameExists) {
@@ -333,21 +337,6 @@ export default function Settings() {
             <Shield className="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 rotate-12 group-hover:rotate-45 transition-transform duration-700" />
           </div>
         )}
-
-        {/* Public Node Address */}
-        <div className="bg-white p-6 rounded-[32px] pro-shadow border border-gray-100 text-center">
-            <Globe className="w-6 h-6 text-indigo-200 mx-auto mb-4" />
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Network Entry Point</h3>
-            <div className="bg-gray-50 p-4 rounded-2xl flex items-center justify-between border border-gray-100">
-              <code className="text-[10px] font-bold text-gray-400 overflow-hidden truncate mr-4">{window.location.host}</code>
-              <button 
-                onClick={() => { navigator.clipboard.writeText(window.location.origin); alert("Link copied!"); }}
-                className="text-[9px] font-black uppercase text-indigo-600 hover:scale-105 transition-transform"
-              >
-                Copy Address
-              </button>
-            </div>
-        </div>
 
         {/* Language Selection */}
         <div className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 ring-1 ring-black/[0.02]">

@@ -178,7 +178,9 @@ export default function OwnerPortal() {
           level5: 'property_marketplace',
           level6: 'lost_found',
           level7: 'youth_sports',
-          level8: 'gram_polls'
+          level8: 'gram_polls',
+          level9: 'cattle_trade',
+          level10: 'audio_bulletin'
         });
       }
     }, (err) => {
@@ -195,8 +197,12 @@ export default function OwnerPortal() {
       const mappingsUpdate = { ...levelMappings };
       
       // Ensure we fill any missing levels with fallback values
-      const fallbacks = ['old_is_gold', 'weather_pest', 'traditional_medicine', 'legal_aid', 'property_marketplace', 'lost_found', 'youth_sports', 'gram_polls'];
-      for (let i = 1; i <= 8; i++) {
+      const fallbacks = [
+        'old_is_gold', 'weather_pest', 'traditional_medicine', 'legal_aid', 
+        'property_marketplace', 'lost_found', 'youth_sports', 'gram_polls',
+        'cattle_trade', 'audio_bulletin'
+      ];
+      for (let i = 1; i <= 10; i++) {
         if (!mappingsUpdate[`level${i}`]) {
           mappingsUpdate[`level${i}`] = fallbacks[i - 1] || 'old_is_gold';
         }
@@ -215,7 +221,7 @@ export default function OwnerPortal() {
           updatedAt: serverTimestamp()
         }, { merge: true });
       });
-      triggerAlert("यशस्वी (Success)", "या राज्यासाठीच्या ८ पायऱ्यांचे फीचर्स यशस्वीरीत्या सेव्ह केले आहेत!");
+      triggerAlert("यशस्वी (Success)", "या राज्यासाठीच्या १० पायऱ्यांचे फीचर्स यशस्वीरीत्या सेव्ह केले आहेत!");
     } catch (err: any) {
       console.error("Error saving state config:", err);
       triggerAlert("त्रुटी (Error)", "बदल सेव्ह करताना अडचण आली: " + err.message);

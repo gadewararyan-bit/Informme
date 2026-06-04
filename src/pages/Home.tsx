@@ -55,7 +55,6 @@ function playAlertBuzzer() {
 }
 
 export default function Home() {
-  const CENSUS_MULTIPLIER = 25000;
   const { user } = useAuth();
   const { t, language } = useTranslation();
   const navigate = useNavigate();
@@ -78,6 +77,14 @@ export default function Home() {
   
   // Dynamic Milestone Config hooks
   const [selectedFeatureId, setSelectedFeatureId] = useState<string>('old_is_gold');
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  
+  const userStateCode = user?.homeState || user?.location?.homeState;
+  const stateData = userStateCode ? INDIAN_STATES.find(s => s.code === userStateCode) : undefined;
+  const registeredCount = userStateCode ? (stateStats[userStateCode] || 0) : 0;
+  const targetPop = stateData?.targetPopulation || 2000000;
+  const pct = Math.min(100, Math.round((registeredCount / targetPop) * 100));
+
   const [userStateConfig, setUserStateConfig] = useState<{[key: string]: string}>({
     level1: 'old_is_gold',
     level2: 'weather_pest',
@@ -86,7 +93,9 @@ export default function Home() {
     level5: 'property_marketplace',
     level6: 'lost_found',
     level7: 'youth_sports',
-    level8: 'gram_polls'
+    level8: 'gram_polls',
+    level9: 'cattle_trade',
+    level10: 'audio_bulletin'
   });
 
   const [activeAlertZonePost, setActiveAlertZonePost] = useState<any | null>(null);
@@ -382,6 +391,36 @@ export default function Home() {
     return () => unsubscribe();
   }, [user?.location?.areaName]);
 
+  const getFeatureIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'volume': return <Sparkles className="w-4 h-4 text-indigo-500" />;
+      case 'mandi': return <ShoppingBag className="w-4 h-4 text-amber-500" />;
+      case 'blood': return <ShieldAlert className="w-4 h-4 text-rose-500" />;
+      case 'book': return <Info className="w-4 h-4 text-blue-500" />;
+      case 'jobs': return <Users className="w-4 h-4 text-emerald-500" />;
+      case 'gift': return <Tag className="w-4 h-4 text-purple-500" />;
+      case 'tractor': return <Activity className="w-4 h-4 text-indigo-500" />;
+      case 'art': return <Star className="w-4 h-4 text-yellow-500" />;
+      case 'bus': return <MapPin className="w-4 h-4 text-cyan-500" />;
+      case 'compass': return <Sparkles className="w-4 h-4 text-cyan-600" />;
+      case 'bell': return <Zap className="w-4 h-4 text-yellow-550 animate-pulse" />;
+      case 'home': return <MapPin className="w-4 h-4 text-sky-500" />;
+      case 'swap': return <Tag className="w-4 h-4 text-amber-600" />;
+      case 'health': return <Activity className="w-4 h-4 text-red-500" />;
+      case 'map': return <MapPin className="w-4 h-4 text-teal-500" />;
+      case 'shield': return <ShieldAlert className="w-4 h-4 text-orange-500" />;
+      case 'cattle': return <Zap className="w-4 h-4 text-amber-500" />;
+      case 'leaf': return <Sparkles className="w-4 h-4 text-green-500" />;
+      case 'drop': return <Cloud className="w-4 h-4 text-blue-400" />;
+      case 'sparkles': return <Sparkles className="w-4 h-4 text-amber-400" />;
+      case 'scale': return <Info className="w-4 h-4 text-indigo-600" />;
+      case 'search': return <Search className="w-4 h-4 text-indigo-500" />;
+      case 'award': return <Star className="w-4 h-4 text-yellow-550" />;
+      case 'check': return <Check className="w-4 h-4 text-emerald-500" />;
+      default: return <MessageSquare className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#F8F9FA]">
       {/* App Header */}
@@ -398,10 +437,26 @@ export default function Home() {
               </span>
             </div>
 
-          <h1 className="text-3xl sm:text-6xl md:text-8xl font-black tracking-tighter text-gray-900 flex flex-wrap gap-x-3 sm:gap-x-4 items-center">
-            <span>INFORM</span>
-            <span className="bg-gradient-to-r from-saffron via-white to-india-green bg-clip-text text-transparent">ME</span>
-          </h1>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <h1 className="text-3xl sm:text-6xl md:text-8xl font-black tracking-tighter text-gray-900 flex flex-wrap gap-x-3 sm:gap-x-4 items-center">
+              <span>INFORM</span>
+              <span className="bg-gradient-to-r from-saffron via-white to-india-green bg-clip-text text-transparent">ME</span>
+            </h1>
+
+            {userStateCode && stateData && (
+              <button
+                onClick={() => setShowMilestoneModal(true)}
+                className="flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 text-white font-black uppercase tracking-widest text-[10px] rounded-[24px] shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-indigo-500/10"
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-saffron"></span>
+                </span>
+                <span>{language === 'mr' ? `${stateData.nameMr} टप्पे` : `${stateData.nameEn} Milestones`}</span>
+                <span className="bg-white/20 text-white px-2.5 py-1 rounded-xl text-[10px] font-mono font-black">{pct}%</span>
+              </button>
+            )}
+          </div>
           
           <div className="flex flex-wrap items-center gap-2 mt-6">
             <LocationPicker />
@@ -431,7 +486,7 @@ export default function Home() {
     </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 md:px-10 space-y-12">        {/* State-specific Launch Activation Dashboard */}
-        {!user?.homeState && !user?.location?.homeState ? (
+        {!user?.homeState && !user?.location?.homeState && (
           <div className="bg-gradient-to-br from-indigo-50 to-blue-50/50 p-8 rounded-[40px] border border-indigo-100 pro-shadow relative overflow-hidden">
             <div className="relative z-10 max-w-2xl">
               <span className="px-3 py-1 bg-indigo-100 text-indigo-700 font-black uppercase text-[10px] tracking-widest rounded-full">
@@ -454,353 +509,6 @@ export default function Home() {
             </div>
             <Sparkles className="absolute -bottom-10 -right-10 w-48 h-48 text-indigo-500/5 rotate-12" />
           </div>
-        ) : (
-          (() => {
-            const userStateCode = user?.homeState || user?.location?.homeState;
-            const stateData = INDIAN_STATES.find(s => s.code === userStateCode);
-            if (!stateData) return null;
-
-            const registeredCount = stateStats[userStateCode] || 0;
-            const targetPop = stateData.targetPopulation;
-            const pct = Math.min(100, Math.round((registeredCount / targetPop) * 100));
-
-            const getFeatureIcon = (iconName: string) => {
-              switch (iconName) {
-                case 'volume': return <Sparkles className="w-4 h-4 text-indigo-500" />;
-                case 'mandi': return <ShoppingBag className="w-4 h-4 text-amber-500" />;
-                case 'blood': return <ShieldAlert className="w-4 h-4 text-rose-500" />;
-                case 'book': return <Info className="w-4 h-4 text-blue-500" />;
-                case 'jobs': return <Users className="w-4 h-4 text-emerald-500" />;
-                case 'gift': return <Tag className="w-4 h-4 text-purple-500" />;
-                case 'tractor': return <Activity className="w-4 h-4 text-indigo-500" />;
-                case 'art': return <Star className="w-4 h-4 text-yellow-500" />;
-                case 'bus': return <MapPin className="w-4 h-4 text-cyan-500" />;
-                case 'compass': return <Sparkles className="w-4 h-4 text-cyan-600" />;
-                case 'bell': return <Zap className="w-4 h-4 text-yellow-550 animate-pulse" />;
-                case 'home': return <MapPin className="w-4 h-4 text-sky-500" />;
-                case 'swap': return <Tag className="w-4 h-4 text-amber-600" />;
-                case 'health': return <Activity className="w-4 h-4 text-red-500" />;
-                case 'map': return <MapPin className="w-4 h-4 text-teal-500" />;
-                case 'shield': return <ShieldAlert className="w-4 h-4 text-orange-500" />;
-                case 'cattle': return <Zap className="w-4 h-4 text-amber-500" />;
-                case 'leaf': return <Sparkles className="w-4 h-4 text-green-500" />;
-                case 'drop': return <Cloud className="w-4 h-4 text-blue-400" />;
-                case 'sparkles': return <Sparkles className="w-4 h-4 text-amber-400" />;
-                case 'scale': return <Info className="w-4 h-4 text-indigo-600" />;
-                case 'search': return <Search className="w-4 h-4 text-indigo-500" />;
-                case 'award': return <Star className="w-4 h-4 text-yellow-550" />;
-                case 'check': return <Check className="w-4 h-4 text-emerald-500" />;
-                default: return <MessageSquare className="w-4 h-4 text-gray-400" />;
-              }
-            };
-            
-            return (
-              <div className="space-y-8">
-                <div className="bg-white p-8 rounded-[40px] pro-shadow border border-gray-100 relative overflow-hidden">
-                  <div className="flex flex-wrap items-center justify-between gap-6 mb-8 relative z-10">
-                    <div>
-                      <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold uppercase text-[10px] tracking-widest rounded-full">
-                         ⚡ State Milestone Tracker
-                      </span>
-                      <h2 className="text-3xl font-black italic uppercase tracking-tighter mt-4 flex items-center gap-2 text-slate-900">
-                        <span>{language === 'mr' ? stateData.nameMr : stateData.nameEn}</span>
-                        <span className="text-indigo-600 font-black">({pct}%)</span>
-                      </h2>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-black uppercase text-gray-500 tracking-wider bg-gray-50 px-4 py-2 rounded-xl border border-gray-105">
-                        {(registeredCount * CENSUS_MULTIPLIER).toLocaleString('en-IN')} / {(targetPop * CENSUS_MULTIPLIER).toLocaleString('en-IN')} {language === 'mr' ? 'नागरिक' : 'Citizens'}
-                      </span>
-                      <button
-                        onClick={() => {
-                          const shareText = `Join India Informer to help unlock ${stateData.nameEn}'s exclusive dynamic community module! Unlock state alerts, wholesale network and direct forums. Register here: ${window.location.origin}`;
-                          navigator.clipboard.writeText(shareText);
-                          setCopiedStateLink(true);
-                          setTimeout(() => setCopiedStateLink(false), 2000);
-                        }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] px-5 py-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 pro-shadow cursor-pointer"
-                      >
-                        {copiedStateLink ? 'Link Copied!' : 'Invite Citizens'} <Copy className="w-3" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-6 relative border border-gray-50 p-0.5 animate-pulse">
-                    <motion.div 
-                      className="h-full rounded-full bg-gradient-to-r from-orange-400 to-indigo-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                    />
-                  </div>
-
-                  {/* 📊 BILINGUAL CENSUS & POPULATION BENCHMARKS REPORT PANEL 📊 */}
-                  <div className="bg-gradient-to-br from-indigo-50/50 to-blue-50/30 border border-indigo-100/60 rounded-[32px] p-6 mb-8 text-left space-y-4 shadow-sm">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center">
-                          <Users className="w-5 h-5 text-indigo-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black uppercase text-indigo-950 tracking-wider">
-                            {language === 'mr' ? 'राज्यनिहाय जनगणना मार्गदर्शक व प्रगती' : 'State census & population goals'}
-                          </h3>
-                          <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5">
-                            {language === 'mr' ? `नोंदणी प्रगती: ${(registeredCount * CENSUS_MULTIPLIER).toLocaleString('en-IN')} / ${(targetPop * CENSUS_MULTIPLIER).toLocaleString('en-IN')} नागरिक जोडले` : `Adoption progress: ${(registeredCount * CENSUS_MULTIPLIER).toLocaleString('en-IN')} out of ${(targetPop * CENSUS_MULTIPLIER).toLocaleString('en-IN')} citizen target`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white px-3.5 py-1.5 rounded-xl">
-                          {language === 'mr' ? `सक्रिय जनगणना स्तर: Level ${[...STATE_MILESTONE_LEVELS].reverse().find(ml => pct >= ml.pct)?.level || 0}` : `Unlocked Level: L${[...STATE_MILESTONE_LEVELS].reverse().find(ml => pct >= ml.pct)?.level || 0}`}
-                        </span>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* 8 Progressive Milestones List */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
-                     {STATE_MILESTONE_LEVELS.map((ml) => {
-                        const levelKey = `level${ml.level}`;
-                        const featureId = userStateConfig[levelKey];
-                        const milestoneFeature = STATE_FEATURE_TEMPLATES.find(f => f.id === featureId);
-                        const isUnlocked = pct >= ml.pct;
-                        const targetMembers = Math.ceil((targetPop * ml.pct) / 100);
-                        const isSelected = selectedFeatureId === featureId;
-
-                        return (
-                           <div
-                             key={ml.level}
-                             onClick={() => {
-                               if (isUnlocked && featureId) {
-                                 setSelectedFeatureId(featureId);
-                               }
-                             }}
-                             className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between h-32 ${
-                               isUnlocked 
-                                 ? isSelected 
-                                   ? 'bg-indigo-600 border-indigo-700 text-white shadow-lg cursor-pointer scale-105 ring-4 ring-indigo-50' 
-                                   : 'bg-emerald-50/50 hover:bg-emerald-50 border-emerald-100 text-slate-800 cursor-pointer hover:border-emerald-200'
-                                 : 'bg-gray-50 border-gray-100 text-gray-400 opacity-60'
-                             }`}
-                           >
-                              <div>
-                                 <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${isUnlocked ? isSelected ? 'bg-indigo-700 text-white' : 'bg-emerald-150 text-emerald-800' : 'bg-gray-150 text-gray-400'}`}>
-                                       L{ml.level} ({ml.pct}%)
-                                    </span>
-                                    {isUnlocked ? (
-                                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                                    ) : (
-                                       <span className="text-[8px]">🔒</span>
-                                    )}
-                                 </div>
-                                 <h4 className={`text-[10px] font-black uppercase truncate tracking-tight ${isSelected ? 'text-white' : 'text-slate-800'}`}>
-                                    {milestoneFeature ? (language === 'mr' ? milestoneFeature.titleMr : milestoneFeature.titleEn) : 'Feature Option'}
-                                 </h4>
-                              </div>
-
-                              <div className="pt-2 border-t border-gray-150/10">
-                                 {isUnlocked ? (
-                                    <span className={`text-[8px] font-black uppercase tracking-wider ${isSelected ? 'text-indigo-200' : 'text-emerald-600'}`}>
-                                       {isSelected ? '● Active' : 'Select'}
-                                    </span>
-                                 ) : (
-                                    <span className="text-[8px] font-bold text-gray-400 leading-tight block">
-                                       Need {targetMembers - registeredCount > 0 ? `${((targetMembers - registeredCount) * CENSUS_MULTIPLIER).toLocaleString('en-IN')} citizens` : '0 more'}
-                                    </span>
-                                 )}
-                              </div>
-                           </div>
-                        );
-                     })}
-                  </div>
-
-                   {/* Active Selected Feature Workspace */}
-                   {(() => {
-                      const currentActiveFeature = STATE_FEATURE_TEMPLATES.find(f => f.id === selectedFeatureId);
-                      const milestoneIndex = STATE_MILESTONE_LEVELS.findIndex(ml => userStateConfig[`level${ml.level}`] === selectedFeatureId);
-                      const activeLevelInfo = milestoneIndex !== -1 ? STATE_MILESTONE_LEVELS[milestoneIndex] : null;
- 
-                      if (!currentActiveFeature) return null;
-                      const isUnlocked = activeLevelInfo && pct >= activeLevelInfo.pct;
-                      const targetMembers = activeLevelInfo ? Math.ceil((targetPop * activeLevelInfo.pct) / 100) : 0;
-
-                     return (
-                        <div className="bg-emerald-50/20 p-6 rounded-[32px] border border-emerald-100/60 ring-4 ring-emerald-50/20">
-                          {isUnlocked ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center pro-shadow">
-                                   {getFeatureIcon(currentActiveFeature.icon)}
-                                </div>
-                                <div>
-                                  <h3 className="text-lg font-black uppercase tracking-wide text-gray-900 leading-none">
-                                    {language === 'mr' ? currentActiveFeature.titleMr : currentActiveFeature.titleEn}
-                                  </h3>
-                                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1">
-                                    {language === 'mr' ? 'अधिकृत प्रादेशिक सेवा सक्रिय!' : 'Official State Service Active!'}
-                                  </p>
-                                </div>
-                              </div>
-                              <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-xl">
-                                {language === 'mr' ? currentActiveFeature.descMr : currentActiveFeature.descEn}
-                              </p>
-
-                              {/* State discussion forum form */}
-                              <form onSubmit={handleAddShout} className="mb-8">
-                                <div className="bg-white p-3 rounded-2xl border border-gray-100 pro-shadow flex items-center gap-3">
-                                  <input 
-                                    type="text" 
-                                    value={newShoutContent}
-                                    onChange={(e) => setNewShoutContent(e.target.value)}
-                                    placeholder={language === 'mr' ? currentActiveFeature.placeholderMr : currentActiveFeature.placeholderEn}
-                                    className="bg-transparent border-none text-sm font-bold flex-1 focus:ring-0 text-gray-900 placeholder:text-gray-300"
-                                    required
-                                  />
-                                  <button
-                                    type="submit"
-                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all cursor-pointer"
-                                  >
-                                    Shout
-                                  </button>
-                                </div>
-                              </form>
-
-                              {/* Shouts Feed */}
-                              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-3">
-                                {stateShouts.length === 0 ? (
-                                  <div className="text-center py-8 text-gray-400 font-bold uppercase text-[10px] tracking-wider bg-white rounded-2xl border border-gray-50">
-                                    No updates yet for this feature. Be the first to start the feed!
-                                  </div>
-                                ) : (
-                                  stateShouts.map((shout) => (
-                                    <div key={shout.id} className="bg-white p-4 rounded-2xl border border-gray-50 pro-shadow">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-black text-gray-900">{shout.authorName}</span>
-                                          <span className="px-1.5 py-0.5 bg-gray-50 border border-gray-100 text-[8px] font-bold text-gray-400 rounded uppercase">
-                                            {shout.location?.areaName || 'Residency User'}
-                                          </span>
-                                        </div>
-                                        <span className="text-[9px] font-bold text-gray-300 uppercase">
-                                          {shout.createdAt?.toDate ? shout.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
-                                        </span>
-                                      </div>
-                                      <p className="text-xs text-gray-800 font-semibold leading-relaxed">{shout.content}</p>
-
-                                      {/* Alert Zone Custom Dynamic Chat Action Bar */}
-                                      {['weather_pest', 'property_marketplace', 'lost_found'].includes(selectedFeatureId) && (
-                                        <div className="mt-4 pt-3 border-t border-rose-50 flex items-center justify-between flex-wrap gap-2">
-                                          <span className="text-[8px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md uppercase tracking-wider animate-pulse flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
-                                            {language === 'mr' ? 'सतर्कता विभाग कृती' : 'Alert Zone Active'}
-                                          </span>
-                                          {shout.authorId !== user?.uid ? (
-                                            <button
-                                              onClick={() => {
-                                                navigate(`/chat?userId=${shout.authorId}&userName=${encodeURIComponent(shout.authorName)}`);
-                                              }}
-                                              className="px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
-                                            >
-                                              <MessageSquare className="w-3 h-3" />
-                                              {language === 'mr' ? 'थेट चॅट सुरू करा' : 'Direct Chat'}
-                                            </button>
-                                          ) : (
-                                            <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider">
-                                              {language === 'mr' ? 'तुमची पोस्ट' : 'Your Alert Post'}
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="py-12 text-center text-gray-500 space-y-6 max-w-md mx-auto">
-                               <div className="relative mx-auto w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100 shadow-sm animate-bounce">
-                                  <span className="text-3xl text-red-500">🔒</span>
-                               </div>
-                               <div>
-                                 <h5 className="text-base font-black uppercase text-gray-950 flex items-center justify-center gap-2">
-                                    {language === 'mr' ? 'हे फिचर अद्याप लॉक केलेले आहे!' : 'This Feature is Currently Locked!'}
-                                 </h5>
-                                 <p className="text-[10px] font-black tracking-widest text-indigo-600 uppercase mt-1">
-                                    {language === 'mr' 
-                                      ? `उद्दिष्ट पातळी: LEVEL ${activeLevelInfo?.level || '?'}` 
-                                      : `Target Level Required: LEVEL ${activeLevelInfo?.level || '?'}`}
-                                 </p>
-                               </div>
-
-                               <div className="bg-white rounded-2xl p-5 border border-indigo-100 shadow-sm text-left space-y-3">
-                                 <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                                   {language === 'mr' ? '📊 आवश्यक जनगणना (LOKSANKHYA):' : '📊 Census Requirement:'}
-                                 </h6>
-                                 <div className="flex justify-between text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">
-                                   <span>{language === 'mr' ? 'सध्याची नोंदणीकृत लोकसंख्या:' : 'Current State Citizens:'}</span>
-                                   <span className="font-extrabold text-indigo-600 font-mono">{(registeredCount * CENSUS_MULTIPLIER).toLocaleString('en-IN')} {language === 'mr' ? 'नागरिक' : 'citizens'}</span>
-                                 </div>
-                                 <div className="flex justify-between text-xs font-bold text-gray-900 border-b border-gray-100 pb-2">
-                                   <span>{language === 'mr' ? 'अनलॉकसाठी आवश्यक लोकसंख्या:' : 'Required for Unlock:'}</span>
-                                   <span className="font-extrabold text-emerald-600 font-mono">{(targetMembers * CENSUS_MULTIPLIER).toLocaleString('en-IN')} {language === 'mr' ? 'नागरिक' : 'citizens'}</span>
-                                 </div>
-                                 <div className="flex justify-between text-xs font-bold text-gray-900">
-                                   <span>{language === 'mr' ? 'अजून हवे असलेले नागरिक:' : 'More Citizens Needed:'}</span>
-                                   <span className="font-extrabold text-orange-500 font-mono">
-                                     {targetMembers - registeredCount > 0 ? ((targetMembers - registeredCount) * CENSUS_MULTIPLIER).toLocaleString('en-IN') : 0} {language === 'mr' ? 'नागरिक' : 'citizens'}
-                                   </span>
-                                 </div>
-                               </div>
-
-                               <p className="text-xs font-semibold text-gray-500 leading-relaxed">
-                                  {language === 'mr' 
-                                    ? `जेव्हा या राज्याची लोकसंख्या किमान ${(targetMembers * CENSUS_MULTIPLIER).toLocaleString('en-IN')} नागरिक होईल, तेव्हा हे फिचर थेट अनलॉक केले जाईल. इतर नागरिकांना आमंत्रित करा!`
-                                    : `When this state's citizen count reaches at least ${(targetMembers * CENSUS_MULTIPLIER).toLocaleString('en-IN')} citizens, this feature will be added instantly. Invite others to unlock!`}
-                               </p>
-                            </div>
-                          )}
-                        </div>
-                     );
-                  })()}
-                </div>
-
-                {/* Other States progressive slider list */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {INDIAN_STATES.filter(s => s.code !== userStateCode).map(other => {
-                    const oCount = stateStats[other.code] || 0;
-                    const oPct = Math.min(100, Math.round((oCount / other.targetPopulation) * 100));
-
-                    return (
-                      <div key={other.code} className="bg-white p-4 rounded-3xl border border-gray-100 pro-shadow flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{other.code}</span>
-                            <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1 py-0.5 rounded uppercase">{oPct}%</span>
-                          </div>
-                          <h4 className="text-xs font-black uppercase text-gray-900 leading-tight">
-                            {language === 'mr' ? other.nameMr : other.nameEn}
-                          </h4>
-                        </div>
-                        <div className="mt-4">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase">
-                            {(oCount * CENSUS_MULTIPLIER).toLocaleString('en-IN')} / {(other.targetPopulation * CENSUS_MULTIPLIER).toLocaleString('en-IN')} {language === 'mr' ? 'नागरिक' : 'Citizens'}
-                          </p>
-                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
-                            <div className="h-full bg-indigo-500" style={{ width: `${oPct}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()
         )}
 
 
@@ -1248,6 +956,355 @@ export default function Home() {
                   className="w-full py-3 hover:bg-gray-100 font-black text-[10px] uppercase text-gray-400 tracking-widest rounded-xl transition-all cursor-pointer"
                 >
                   {language === 'mr' ? 'बंद करा' : 'Dismiss Alert'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🔮 STATE MILESTONE TRACKER OVERLAY MODAL 🔮 */}
+      <AnimatePresence>
+        {showMilestoneModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[190] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 30 }}
+              className="bg-white max-w-4xl w-full rounded-[40px] p-6 sm:p-8 pro-shadow border border-gray-100 relative overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600" />
+              
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 mb-6 z-10">
+                <div>
+                  <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold uppercase text-[10px] tracking-widest rounded-full">
+                     ⚡ State Milestone Tracker
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter mt-3 flex items-center gap-2 text-slate-900">
+                    <span>{language === 'mr' ? stateData?.nameMr : stateData?.nameEn}</span>
+                    <span className="text-indigo-600 font-black">({pct}%)</span>
+                  </h2>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">
+                    {language === 'mr' ? 'गाव व राज्य स्तरावर लोकमत व विकास टप्पे' : 'Provincial adoption census & system milestones'}
+                  </p>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowMilestoneModal(false)}
+                  className="p-3 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 rounded-full transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Content Zone */}
+              <div className="overflow-y-auto flex-1 pr-1 space-y-6">
+                {/* Population and share board */}
+                <div className="bg-gradient-to-br from-indigo-50/40 to-blue-50/20 border border-indigo-100/60 rounded-[32px] p-6 text-left flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center shrink-0">
+                      <Users className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase text-indigo-950 tracking-wider">
+                        {language === 'mr' ? 'राज्य जनगणना उद्दिष्ट व प्रगती' : 'State adoption census goals'}
+                      </h3>
+                      <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-0.5">
+                        {language === 'mr' ? `नोंदणी प्रगती: ${registeredCount.toLocaleString('en-IN')} / ${targetPop.toLocaleString('en-IN')} नागरिक` : `Progress: ${registeredCount.toLocaleString('en-IN')} / ${targetPop.toLocaleString('en-IN')} registered`}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2.5 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const shareText = `Join India Informer to help unlock ${stateData?.nameEn}'s exclusive dynamic community module! Unlock state alerts, wholesale network and direct forums. Register here: ${window.location.origin}`;
+                        navigator.clipboard.writeText(shareText);
+                        setCopiedStateLink(true);
+                        setTimeout(() => setCopiedStateLink(false), 2000);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] w-full md:w-auto px-5 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 pro-shadow cursor-pointer"
+                    >
+                      {copiedStateLink ? 'Link Copied!' : 'Invite Citizens'} <Copy className="w-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-xs font-black uppercase text-gray-500 tracking-wider">
+                    <span>{language === 'mr' ? 'प्रगती टक्केवारी' : 'Progress Rate'}</span>
+                    <span className="text-indigo-600">{pct}%</span>
+                  </div>
+                  <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden relative border border-gray-50 p-0.5">
+                    <motion.div 
+                      className="h-full rounded-full bg-gradient-to-r from-orange-400 to-indigo-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Progressive Milestones Board */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black uppercase text-gray-400 tracking-widest">
+                     {language === 'mr' ? '१० प्रगतिशील अनलॉकिंग टप्पे (निवडण्यासाठी क्लिक करा)' : '10 Progressive Unlocking Milestones (Click Unlocked to Open)'}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {STATE_MILESTONE_LEVELS.map((ml) => {
+                        const levelKey = `level${ml.level}`;
+                        const featureId = userStateConfig[levelKey];
+                        const milestoneFeature = STATE_FEATURE_TEMPLATES.find(f => f.id === featureId);
+                        const neededUsers = (ml.pct / 100) * targetPop;
+                        const isUnlocked = registeredCount >= neededUsers;
+                        const targetMembers = neededUsers;
+                        const isSelected = selectedFeatureId === featureId;
+
+                        return (
+                           <div
+                             key={ml.level}
+                             onClick={() => {
+                               if (isUnlocked && featureId) {
+                                 setSelectedFeatureId(featureId);
+                               }
+                             }}
+                             className={`p-4 rounded-3xl border transition-all text-left flex items-start gap-4 ${
+                               isUnlocked 
+                                 ? isSelected 
+                                   ? 'bg-emerald-600 border-emerald-700 text-white shadow-md cursor-pointer scale-[1.01] ring-4 ring-emerald-100' 
+                                   : 'bg-emerald-50/40 hover:bg-emerald-100 hover:border-emerald-200 border-emerald-100 text-slate-850 cursor-pointer'
+                                 : 'bg-gray-50/60 border-gray-100 text-gray-400'
+                             }`}
+                           >
+                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                               isUnlocked 
+                                 ? isSelected 
+                                   ? 'bg-white text-emerald-600'
+                                   : 'bg-emerald-500 text-white' 
+                                 : 'bg-gray-200 text-gray-500'
+                             }`}>
+                               {ml.level}
+                             </div>
+                             
+                             <div className="flex-1 space-y-1">
+                               <div className="flex items-center justify-between gap-2">
+                                 <h5 className={`text-xs font-black uppercase tracking-tight ${isSelected ? 'text-white' : isUnlocked ? 'text-slate-900' : 'text-gray-400'}`}>
+                                   {milestoneFeature ? (language === 'mr' ? milestoneFeature.titleMr : milestoneFeature.titleEn) : 'Feature Module'}
+                                 </h5>
+                                 <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${isSelected ? 'bg-emerald-700 text-white' : isUnlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-500'}`}>
+                                   {ml.pct}%
+                                 </span>
+                               </div>
+                               <p className={`text-[10px] leading-normal ${isSelected ? 'text-emerald-100' : 'text-gray-400'}`}>
+                                 {milestoneFeature ? (language === 'mr' ? milestoneFeature.descMr : milestoneFeature.descEn) : ''}
+                               </p>
+                               <div className="pt-2 border-t border-gray-100/40 flex justify-between items-center text-[9px] font-bold">
+                                 <span className={isSelected ? 'text-white' : isUnlocked ? 'text-emerald-600' : 'text-gray-400'}>
+                                   {isSelected ? (language === 'mr' ? '● चालू आहे' : '● Active Now') : isUnlocked ? (language === 'mr' ? '✓ अनलॉक केले' : '✓ Unlocked') : `${neededUsers.toLocaleString('en-IN')} ${language === 'mr' ? 'नागरिक लक्ष्य' : 'Citizens'}`}
+                                 </span>
+                                 {!isUnlocked && (
+                                   <span className="text-orange-500">
+                                      {language === 'mr' ? `अजून हवे: ${(neededUsers - registeredCount).toLocaleString('en-IN')}` : `Need ${(neededUsers - registeredCount).toLocaleString('en-IN')}`}
+                                   </span>
+                                 )}
+                               </div>
+                             </div>
+                           </div>
+                        );
+                     })}
+                  </div>
+                </div>
+
+                {/* Active Selected Feature Workspace */}
+                <div className="border-t border-gray-100 pt-6 mt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold uppercase text-[10px] tracking-widest rounded-lg">
+                       📍 {language === 'mr' ? 'निवडलेले सक्रिय फिचर' : 'Selected Active Module'}
+                    </span>
+                  </div>
+                  {(() => {
+                    const currentActiveFeature = STATE_FEATURE_TEMPLATES.find(f => f.id === selectedFeatureId);
+                    const milestoneIndex = STATE_MILESTONE_LEVELS.findIndex(ml => userStateConfig[`level${ml.level}`] === selectedFeatureId);
+                    const activeLevelInfo = milestoneIndex !== -1 ? STATE_MILESTONE_LEVELS[milestoneIndex] : null;
+
+                    if (!currentActiveFeature) return null;
+                    const neededUsers = activeLevelInfo ? (activeLevelInfo.pct / 100) * targetPop : 0;
+                    const isUnlocked = activeLevelInfo && registeredCount >= neededUsers;
+
+                    return (
+                      <div className="bg-emerald-50/20 p-6 rounded-[32px] border border-emerald-100/60 transition-all">
+                        {isUnlocked ? (
+                          <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center pro-shadow shrink-0">
+                                   {getFeatureIcon(currentActiveFeature.icon)}
+                                </div>
+                                <div className="text-left">
+                                  <h3 className="text-sm font-black uppercase tracking-wide text-gray-900 leading-none">
+                                    {language === 'mr' ? currentActiveFeature.titleMr : currentActiveFeature.titleEn}
+                                  </h3>
+                                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1">
+                                    {language === 'mr' ? 'अधिकृत प्रादेशिक सेवा सक्रिय!' : 'Official State Service Active!'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-xl text-left">
+                              {language === 'mr' ? currentActiveFeature.descMr : currentActiveFeature.descEn}
+                            </p>
+
+                            {/* State discussion forum form */}
+                            <form onSubmit={handleAddShout} className="mb-4">
+                              <div className="bg-white p-3 rounded-2xl border border-gray-100 pro-shadow flex items-center gap-3">
+                                <input 
+                                  type="text" 
+                                  value={newShoutContent}
+                                  onChange={(e) => setNewShoutContent(e.target.value)}
+                                  placeholder={language === 'mr' ? currentActiveFeature.placeholderMr : currentActiveFeature.placeholderEn}
+                                  className="bg-transparent border-none text-sm font-bold flex-1 focus:ring-0 text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-none focus:ring-transparent"
+                                  required
+                                />
+                                <button
+                                  type="submit"
+                                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[10px] rounded-xl transition-all cursor-pointer shrink-0"
+                                >
+                                  Shout
+                                </button>
+                              </div>
+                            </form>
+
+                            {/* Shouts Feed */}
+                            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-3">
+                              {stateShouts.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400 font-bold uppercase text-[10px] tracking-wider bg-white rounded-2xl border border-gray-50">
+                                  No updates yet for this feature. Be the first to start the feed!
+                                </div>
+                              ) : (
+                                stateShouts.map((shout) => (
+                                  <div key={shout.id} className="bg-white p-4 rounded-2xl border border-gray-50 pro-shadow text-left">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-gray-900">{shout.authorName}</span>
+                                        <span className="px-1.5 py-0.5 bg-gray-50 border border-gray-100 text-[8px] font-bold text-gray-400 rounded uppercase">
+                                          {shout.location?.areaName || 'Residency User'}
+                                        </span>
+                                      </div>
+                                      <span className="text-[9px] font-bold text-gray-300 uppercase">
+                                        {shout.createdAt?.toDate ? shout.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-800 font-semibold leading-relaxed text-left">{shout.content}</p>
+
+                                    {/* Alert Zone Custom Dynamic Chat Action Bar */}
+                                    {['weather_pest', 'property_marketplace', 'lost_found'].includes(selectedFeatureId) && (
+                                      <div className="mt-4 pt-3 border-t border-rose-50 flex items-center justify-between flex-wrap gap-2">
+                                        <span className="text-[8px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
+                                          {language === 'mr' ? 'सतर्कता विभाग कृती' : 'Alert Zone Active'}
+                                        </span>
+                                        {shout.authorId !== user?.uid ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setShowMilestoneModal(false);
+                                              navigate(`/chat?userId=${shout.authorId}&userName=${encodeURIComponent(shout.authorName)}`);
+                                            }}
+                                            className="px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all active:scale-95 flex items-center gap-1 cursor-pointer shrink-0"
+                                          >
+                                            <MessageSquare className="w-3 h-3" />
+                                            {language === 'mr' ? 'थेट चॅट सुरू करा' : 'Direct Chat'}
+                                          </button>
+                                        ) : (
+                                          <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider">
+                                            {language === 'mr' ? 'तुमची पोस्ट' : 'Your Alert Post'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-12 text-center text-gray-500 space-y-6 max-w-md mx-auto">
+                             <div className="relative mx-auto w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100 shadow-sm">
+                                <span className="text-3xl text-red-500">🔒</span>
+                             </div>
+
+                             <h3 className="text-base font-black uppercase tracking-wide text-gray-900 leading-none">
+                                {language === 'mr' ? 'हे फिचर सध्या कुलूपबंद आहे' : 'This feature is currently locked'}
+                             </h3>
+
+                             <p className="text-xs font-semibold text-gray-500 leading-relaxed">
+                                {language === 'mr' 
+                                  ? `जेव्हा या राज्याची लोकसंख्या किमान ${neededUsers.toLocaleString('en-IN')} नागरिक होईल, तेव्हा हे फिचर थेट अनलॉक केले जाईल. इतर नागरिकांना आमंत्रित करा!`
+                                  : `When this state's citizen count reaches at least ${neededUsers.toLocaleString('en-IN')} citizens, this feature will be added instantly. Invite others to unlock!`}
+                             </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Other States progressive slider list */}
+                <div className="border-t border-gray-100 pt-6 mt-6 text-left space-y-3">
+                  <h4 className="text-xs font-black uppercase text-gray-400 tracking-widest">
+                     {language === 'mr' ? 'इतर राज्यांची प्रगती स्थिती' : 'Adoption Rates In Other States'}
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {INDIAN_STATES.filter(s => s.code !== userStateCode).map(other => {
+                      const oCount = stateStats[other.code] || 0;
+                      const oPct = Math.min(100, Math.round((oCount / other.targetPopulation) * 100));
+
+                      return (
+                        <div key={other.code} className="bg-white p-4 rounded-3xl border border-gray-100 pro-shadow flex flex-col justify-between text-left">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{other.code}</span>
+                              <span className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1 py-0.5 rounded uppercase">{oPct}%</span>
+                            </div>
+                            <h4 className="text-xs font-black uppercase text-gray-900 leading-tight">
+                              {language === 'mr' ? other.nameMr : other.nameEn}
+                            </h4>
+                          </div>
+                          <div className="mt-4">
+                            <p className="text-[9px] font-bold text-gray-400 uppercase">
+                              {oCount.toLocaleString('en-IN')} / {other.targetPopulation.toLocaleString('en-IN')} {language === 'mr' ? 'नागरिक' : 'Citizens'}
+                            </p>
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1.5">
+                              <div className="h-full bg-indigo-500" style={{ width: `${oPct}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer text */}
+              <div className="mt-6 pt-4 border-t border-gray-100 text-center flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  India Informme State Growth Framework
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowMilestoneModal(false)}
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shrink-0"
+                >
+                  {language === 'mr' ? 'बंद करा' : 'Got it'}
                 </button>
               </div>
             </motion.div>

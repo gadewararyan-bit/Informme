@@ -34,7 +34,10 @@ service cloud.firestore {
         && (!('earnings' in data) || data.earnings is int || data.earnings is float)
         && (!('location' in data) || data.location == null || (
               data.location.areaName is string
-           ));
+           ))
+        && (!('phoneNumber' in data) || data.phoneNumber is string)
+        && (!('phoneVerified' in data) || data.phoneVerified is bool)
+        && (!('onboardingCompleted' in data) || data.onboardingCompleted is bool);
     }
 
     function isValidPost(data) {

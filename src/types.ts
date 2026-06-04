@@ -29,6 +29,9 @@ export interface User {
   engagementPoints?: number;
   referralCode?: string;
   referredBy?: string;
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 export interface Post {

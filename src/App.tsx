@@ -25,6 +25,7 @@ import SectionView from './pages/SectionView';
 import Pricing from './pages/Pricing';
 import NotificationSystem from './components/NotificationSystem';
 import AdminFooter from './components/layout/AdminFooter';
+import OnboardingModal from './components/OnboardingModal';
 
 import { ADMIN_EMAILS, APP_CONFIG } from './constants';
 
@@ -51,6 +52,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24 max-w-full md:max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-lg 2xl:max-w-screen-xl mx-auto relative overflow-x-hidden shadow-2xl bg-white">
+      {user && !user.onboardingCompleted && <OnboardingModal user={user} />}
       <AnimatePresence>
         {isOffline && (
           <motion.div 
@@ -68,7 +70,7 @@ function AppContent() {
       {user && <NotificationSystem />}
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        <Route path="/" element={user ? <Home /> : <Home />} />
+        <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
         <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
         <Route path="/owner-portal" element={(user && (user.isAdmin || (user.email && ADMIN_EMAILS.includes(user.email.trim().toLowerCase())) || (user.displayName && user.displayName.toLowerCase().trim() === 'aryan gadewar'))) ? <OwnerPortal /> : <Navigate to="/" />} />

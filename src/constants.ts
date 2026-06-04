@@ -430,7 +430,7 @@ export const INDIAN_STATES: StateData[] = [
     featureDescEn: 'Bilingual tourist guides directories, handmade paper units, and Auroville organics.',
     featureDescMr: 'फ्रांसीसी संस्कृती पर्यटन मार्गदर्शक, हस्तनिर्मित कागद उद्योग आणि सेंद्रिय औषधे केंद्र!'
   }
-];
+].map(state => ({ ...state, targetPopulation: 2000000 }));
 
 export interface MilestoneLevel {
   level: number;
@@ -447,6 +447,8 @@ export const STATE_MILESTONE_LEVELS: MilestoneLevel[] = [
   { level: 6, pct: 60, name: 'Level 6 (60%)' },
   { level: 7, pct: 70, name: 'Level 7 (70%)' },
   { level: 8, pct: 80, name: 'Level 8 (80%)' },
+  { level: 9, pct: 90, name: 'Level 9 (90%)' },
+  { level: 10, pct: 100, name: 'Level 10 (100%)' },
 ];
 
 export interface FeatureTemplate {

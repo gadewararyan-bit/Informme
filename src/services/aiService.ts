@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY as string,
@@ -114,7 +114,7 @@ function safeJsonParse(text: string | undefined | null) {
               .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3');
             return JSON.parse(desperateJson);
           } catch (mostDesperateError) {
-            console.error("Deep JSON recovery failed:", mostDesperateError);
+            console.warn("JSON recovery status:", mostDesperateError);
           }
         }
       }
@@ -148,6 +148,44 @@ export async function getLocalInfo(area: string, language: string) {
       Translate all readable values to ${language}.`,
       config: {
         responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            weather: {
+              type: Type.OBJECT,
+              properties: {
+                temp: { type: Type.STRING },
+                condition: { type: Type.STRING },
+                description: { type: Type.STRING }
+              },
+              required: ["temp", "condition", "description"]
+            },
+            news: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  summary: { type: Type.STRING }
+                },
+                required: ["title", "summary"]
+              }
+            },
+            events: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  date: { type: Type.STRING },
+                  location: { type: Type.STRING }
+                },
+                required: ["title", "date", "location"]
+              }
+            }
+          },
+          required: ["weather", "news", "events"]
+        },
         tools: [
           {
             // @ts-ignore
@@ -215,7 +253,15 @@ export async function validatePostContent(text: string): Promise<{ isSafe: boole
       Return ONLY a JSON object:
       { "isSafe": boolean, "reason": "Short explanation in simple language why it's not safe, or null if safe" }`,
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            isSafe: { type: Type.BOOLEAN },
+            reason: { type: Type.STRING }
+          },
+          required: ["isSafe"]
+        }
       }
     }));
 
@@ -245,7 +291,31 @@ export async function getHealthAdvice(goal: 'gain' | 'loss' | 'maintenance', lan
       
       Only return the JSON.`,
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            dailyTip: { type: Type.STRING },
+            dietAdvice: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            exercises: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  sets: { type: Type.STRING },
+                  benefit: { type: Type.STRING }
+                },
+                required: ["name", "sets", "benefit"]
+              }
+            },
+            motivation: { type: Type.STRING }
+          },
+          required: ["dailyTip", "dietAdvice", "exercises", "motivation"]
+        }
       }
     }));
 
@@ -326,7 +396,40 @@ export async function getLessonContent(level: string, category: string, targetLa
       
       Only return the JSON.`,
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            content: { type: Type.STRING },
+            examples: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  original: { type: Type.STRING },
+                  translated: { type: Type.STRING },
+                  explanation: { type: Type.STRING }
+                },
+                required: ["original", "translated", "explanation"]
+              }
+            },
+            quiz: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                options: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
+                correct: { type: Type.INTEGER }
+              },
+              required: ["question", "options", "correct"]
+            }
+          },
+          required: ["title", "description", "content", "examples", "quiz"]
+        }
       }
     }));
 
